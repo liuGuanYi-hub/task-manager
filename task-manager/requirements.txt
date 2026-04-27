@@ -1,0 +1,11 @@
+# 核心依赖
+click>=8.0.0
+colorama>=0.4.4
+
+# Web 界面
+flask>=3.0.0
+
+# 开发依赖
+pytest>=7.0.0
+black>=22.0.0
+flake8>=4.0.0
