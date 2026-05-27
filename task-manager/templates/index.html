@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% set active_page = "tasks" %}
+{% block title %}任务列表 - 任务管理系统{% endblock %}
+{% block page_title %}任务工作台{% endblock %}
+{% block page_subtitle %}用更清爽的方式安排、跟进和完成任务{% endblock %}
+{% block hero_action %}<a href="/new" class="btn btn-primary">新建任务</a>{% endblock %}
+{% block content %}
+<div class="content-stack">
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">总任务</div><div class="stat-number">{{ total }}</div></div>
+        <div class="stat-card"><div class="stat-label">待办</div><div class="stat-number">{{ todo }}</div></div>
+        <div class="stat-card"><div class="stat-label">进行中</div><div class="stat-number">{{ in_progress }}</div></div>
+        <div class="stat-card"><div class="stat-label">已完成</div><div class="stat-number">{{ done }}</div></div>
+    </div>
+
+    <section class="panel" style="padding: 22px;">
+        <div class="tabs">
+            <div class="tab active" onclick="location.href='/'">全部任务</div>
+            <div class="tab" onclick="location.href='/new'">新建任务</div>
+        </div>
+        <div class="task-list">
+            {% for task in tasks %}
+            <article class="task-card {{ task.status_class }}">
+                <div class="task-info">
+                    <div class="task-title">
+                        {% if task.status.value == '已完成' %}✅{% elif task.status.value == '进行中' %}🔄{% else %}⬜{% endif %}
+                        {{ task.title }}
+                        <span class="priority-{{ task.priority_class }}">
+                            {% if task.priority.value == '高' %}🔴{% elif task.priority.value == '中' %}🟡{% else %}🟢{% endif %}
+                        </span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="chip">{{ task.status.value }}</span>
+                        <span class="chip">优先级 {{ task.priority.value }}</span>
+                        {% if task.description %}<span>{{ task.description }}</span>{% endif %}
+                        {% for tag in task.tags %}<span class="chip">#{{ tag }}</span>{% endfor %}
+                    </div>
+                </div>
+                <div class="task-actions">
+                    <form method="POST" action="/task/{{ task.id }}/toggle">
+                        <button type="submit" class="btn btn-{{ 'success' if task.status.value != '已完成' else 'warning' }}">
+                            {{ '完成' if task.status.value != '已完成' else '撤销' }}
+                        </button>
+                    </form>
+                    <a href="/task/{{ task.id }}/edit" class="btn btn-warning">编辑</a>
+                    <form method="POST" action="/task/{{ task.id }}/delete" onsubmit="return confirm('确定删除？')">
+                        <button type="submit" class="btn btn-danger">删除</button>
+                    </form>
+                </div>
+            </article>
+            {% else %}
+            <div class="empty-state">
+                <h3>暂无任务</h3>
+                <p class="muted">创建第一个任务后，它会出现在这里。</p>
+                <a href="/new" class="btn btn-primary">创建任务</a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

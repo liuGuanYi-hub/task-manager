@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% set active_page = "calendar" %}
+{% block title %}任务日历 - 任务管理系统{% endblock %}
+{% block page_title %}任务日历{% endblock %}
+{% block page_subtitle %}按日期查看任务节奏和工作密度{% endblock %}
+{% block content %}
+<div class="calendar-controls">
+    <div class="month-nav">
+        <button class="btn btn-primary" onclick="changeMonth(-1)">上月</button>
+        <div class="month-title">{{ month_title }}</div>
+        <button class="btn btn-primary" onclick="changeMonth(1)">下月</button>
+    </div>
+    <div class="view-toggle">
+        <button class="btn btn-primary">月视图</button>
+        <button class="btn" onclick="location.href='/calendar/week'">周视图</button>
+    </div>
+</div>
+<section class="calendar-content">
+    <div class="calendar-grid">
+        {% for label in ['周一','周二','周三','周四','周五','周六','周日'] %}
+        <div class="weekday-header">{{ label }}</div>
+        {% endfor %}
+        {% for day in days %}
+            {% if day.is_empty %}
+            <div class="day-cell empty-day"></div>
+            {% else %}
+            <div class="day-cell {{ 'today' if day.is_today else '' }} {{ 'has-tasks' if day.task_count > 0 else '' }}" onclick="showDayTasks('{{ day.date }}')">
+                <div class="day-number"><span class="date">{{ day.day }}</span></div>
+                {% if day.task_count > 0 %}
+                <div class="task-dots">{% for priority in day.priorities %}<span class="task-dot {{ priority }}"></span>{% endfor %}</div>
+                <div class="task-count">{{ day.task_count }} 个任务</div>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</section>
+<div id="dayModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">任务列表</h2>
+            <button class="close-btn" onclick="closeModal()">×</button>
+        </div>
+        <div id="taskList" class="task-list-modal"></div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const tasksByDate = {{ tasks_json | tojson }};
+function changeMonth(delta) {
+    const url = new URL(window.location.href);
+    const current = new Date(url.searchParams.get('date') || '{{ today }}');
+    current.setMonth(current.getMonth() + delta);
+    url.searchParams.set('date', current.toISOString());
+    window.location.href = url.toString();
+}
+function showDayTasks(date) {
+    const modal = document.getElementById('dayModal');
+    const taskList = document.getElementById('taskList');
+    const modalTitle = document.getElementById('modalTitle');
+    const tasks = tasksByDate[date] || [];
+    modalTitle.textContent = date + ' 的任务 (' + tasks.length + '个)';
+    if (tasks.length === 0) {
+        taskList.innerHTML = '<p class="muted" style="text-align:center;padding:40px;">暂无任务</p>';
+    } else {
+        taskList.innerHTML = tasks.map(task => `
+            <div class="task-item-modal ${task.status_class}">
+                <strong>${task.title}</strong>
+                <p class="muted" style="margin:6px 0;">${task.description || ''}</p>
+                <div class="task-meta"><span class="chip">${task.priority_icon} ${task.priority}</span><span class="chip">${task.status_icon} ${task.status}</span></div>
+            </div>
+        `).join('');
+    }
+    modal.classList.add('show');
+}
+function closeModal() {
+    document.getElementById('dayModal').classList.remove('show');
+}
+document.getElementById('dayModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+</script>
+{% endblock %}

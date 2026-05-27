@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% set active_page = "projects" %}
+{% block title %}{{ project_name }} - 项目管理{% endblock %}
+{% block page_title %}项目：{{ project_name }}{% endblock %}
+{% block page_subtitle %}查看该标签下的任务和完成进度{% endblock %}
+{% block hero_action %}<a href="/projects" class="btn">返回项目列表</a>{% endblock %}
+{% block content %}
+<div class="content-stack">
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">总任务</div><div class="stat-number">{{ total }}</div></div>
+        <div class="stat-card"><div class="stat-label">已完成</div><div class="stat-number">{{ completed }}</div></div>
+        <div class="stat-card"><div class="stat-label">完成率</div><div class="stat-number">{{ completion_rate }}%</div></div>
+    </div>
+    <section class="panel" style="padding: 22px;">
+        <div class="task-list">
+            {% for task in tasks %}
+            <article class="task-card {{ 'done' if task.status.value == '已完成' else '' }}">
+                <div class="task-info">
+                    <div class="task-title">
+                        {% if task.status.value == '已完成' %}✅{% elif task.status.value == '进行中' %}🔄{% else %}⬜{% endif %}
+                        {% if task.priority.value == '高' %}🔴{% elif task.priority.value == '中' %}🟡{% else %}🟢{% endif %}
+                        {{ task.title }}
+                    </div>
+                    <div class="task-meta"><span class="chip">{{ task.status.value }}</span><span class="chip">优先级 {{ task.priority.value }}</span></div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

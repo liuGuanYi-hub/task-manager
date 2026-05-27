@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% set active_page = "new" if mode == "new" else "tasks" %}
+{% block title %}{{ '新建任务' if mode == 'new' else '编辑任务' }} - 任务管理系统{% endblock %}
+{% block page_title %}{{ '新建任务' if mode == 'new' else '编辑任务' }}{% endblock %}
+{% block page_subtitle %}把任务信息整理成清晰、可执行的下一步{% endblock %}
+{% block content %}
+<section class="panel form-panel" style="padding: 24px;">
+    <div class="tabs">
+        <div class="tab" onclick="location.href='/'">全部任务</div>
+        <div class="tab active">{{ '新建任务' if mode == 'new' else '编辑任务' }}</div>
+    </div>
+    <form method="POST" action="{{ action }}">
+        <div class="form-group">
+            <label>标题 *</label>
+            <input type="text" name="title" value="{{ task.title if task else '' }}" required>
+        </div>
+        <div class="form-group">
+            <label>描述</label>
+            <textarea name="description" rows="4">{{ task.description if task else '' }}</textarea>
+        </div>
+        <div class="form-group">
+            <label>优先级</label>
+            <select name="priority">
+                <option value="低" {{ 'selected' if task and task.priority.value == '低' else '' }}>🟢 低</option>
+                <option value="中" {{ 'selected' if (not task) or task.priority.value == '中' else '' }}>🟡 中</option>
+                <option value="高" {{ 'selected' if task and task.priority.value == '高' else '' }}>🔴 高</option>
+            </select>
+        </div>
+        {% if mode == "edit" %}
+        <div class="form-group">
+            <label>状态</label>
+            <select name="status">
+                <option value="待办" {{ 'selected' if task.status.value == '待办' else '' }}>⬜ 待办</option>
+                <option value="进行中" {{ 'selected' if task.status.value == '进行中' else '' }}>🔄 进行中</option>
+                <option value="已完成" {{ 'selected' if task.status.value == '已完成' else '' }}>✅ 已完成</option>
+            </select>
+        </div>
+        {% endif %}
+        <div class="form-group">
+            <label>标签（用逗号分隔）</label>
+            <input type="text" name="tags" value="{{ task.tags|join(', ') if task else '' }}" placeholder="例如：学习，工作，重要">
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{{ '创建任务' if mode == 'new' else '保存修改' }}</button>
+            <a href="/" class="btn btn-warning">取消</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

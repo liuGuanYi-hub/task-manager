@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}任务管理系统{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <main class="app-shell">
+        <section class="mac-window">
+            <div class="window-bar" aria-hidden="true">
+                <span class="traffic traffic-red"></span>
+                <span class="traffic traffic-yellow"></span>
+                <span class="traffic traffic-green"></span>
+            </div>
+            <header class="hero-panel">
+                <div>
+                    <p class="eyebrow">{% block eyebrow %}Task Manager{% endblock %}</p>
+                    <h1>{% block page_title %}任务管理系统{% endblock %}</h1>
+                    <p>{% block page_subtitle %}高效管理你的日常任务{% endblock %}</p>
+                </div>
+                {% block hero_action %}{% endblock %}
+            </header>
+            <nav class="nav-pills" aria-label="主导航">
+                <a href="/" class="{{ 'active' if active_page == 'tasks' else '' }}">任务列表</a>
+                <a href="/new" class="{{ 'active' if active_page == 'new' else '' }}">新建任务</a>
+                <a href="/stats" class="{{ 'active' if active_page == 'stats' else '' }}">统计</a>
+                <a href="/calendar" class="{{ 'active' if active_page == 'calendar' else '' }}">日历</a>
+                <a href="/projects" class="{{ 'active' if active_page == 'projects' else '' }}">项目</a>
+                <a href="/settings" class="{{ 'active' if active_page == 'settings' else '' }}">设置</a>
+            </nav>
+            <div class="content-panel">
+                {% block content %}{% endblock %}
+            </div>
+        </section>
+    </main>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

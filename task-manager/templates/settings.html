@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% set active_page = "settings" %}
+{% block title %}设置 - 任务管理系统{% endblock %}
+{% block page_title %}设置{% endblock %}
+{% block page_subtitle %}管理外观、数据导出和系统信息{% endblock %}
+{% block content %}
+<section class="settings-section">
+    <h2>外观设置</h2>
+    <div class="setting-item">
+        <div class="setting-label">主题颜色</div>
+        <div class="setting-control">
+            <div class="theme-preview">
+                <div class="theme-option active" style="background: linear-gradient(135deg, #4f7cff, #8b5cf6);"></div>
+                <div class="theme-option" style="background: linear-gradient(135deg, #f093fb, #f5576c);"></div>
+                <div class="theme-option" style="background: linear-gradient(135deg, #4facfe, #00f2fe);"></div>
+                <div class="theme-option" style="background: linear-gradient(135deg, #43e97b, #38f9d7);"></div>
+            </div>
+        </div>
+    </div>
+    <div class="setting-item"><div class="setting-label">深色模式</div><div class="setting-control"><button class="btn" disabled>即将推出</button></div></div>
+</section>
+<section class="settings-section">
+    <h2>数据管理</h2>
+    <div class="setting-item">
+        <div class="setting-label">导出数据</div>
+        <div class="setting-control">
+            <a href="/settings/export/json" class="btn btn-primary">导出 JSON</a>
+            <a href="/settings/export/csv" class="btn btn-success">导出 CSV</a>
+        </div>
+    </div>
+    <div class="setting-item"><div class="setting-label">导入数据</div><div class="setting-control"><button class="btn btn-warning" disabled>即将推出</button></div></div>
+    <div class="panel" style="padding: 14px;">
+        <div class="stat-row"><span>总任务数</span><strong>{{ total_tasks }}</strong></div>
+        <div class="stat-row"><span>数据文件大小</span><strong>{{ file_size }}</strong></div>
+        <div class="stat-row"><span>最后更新</span><strong>{{ last_modified }}</strong></div>
+    </div>
+</section>
+<section class="settings-section">
+    <h2>通知设置</h2>
+    <div class="setting-item"><div class="setting-label">任务到期提醒</div><div class="setting-control"><button class="btn" disabled>即将推出</button></div></div>
+    <div class="setting-item"><div class="setting-label">每日摘要</div><div class="setting-control"><button class="btn" disabled>即将推出</button></div></div>
+</section>
+<section class="settings-section">
+    <h2>系统信息</h2>
+    <div class="setting-item"><div class="setting-label">版本</div><div class="setting-control"><span class="muted">v1.0.0</span></div></div>
+    <div class="setting-item"><div class="setting-label">技术栈</div><div class="setting-control"><span class="muted">Python + Flask + Chart.js</span></div></div>
+    <div class="setting-item"><div class="setting-label">GitHub 仓库</div><div class="setting-control"><a href="https://github.com/liuGuanYi-hub/task-manager" target="_blank" class="btn">查看</a></div></div>
+</section>
+{% endblock %}

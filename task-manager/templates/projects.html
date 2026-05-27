@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% set active_page = "projects" %}
+{% block title %}项目管理 - 任务管理系统{% endblock %}
+{% block page_title %}项目管理{% endblock %}
+{% block page_subtitle %}按标签聚合任务，快速查看每个项目的完成度{% endblock %}
+{% block content %}
+{% if projects %}
+<div class="projects-grid">
+    {% for project in projects %}
+    <article class="project-card" onclick="location.href='/projects/{{ project.id }}'">
+        <div class="project-header"><div class="project-title">{{ project.name }}</div></div>
+        {% if project.description %}<p class="project-description">{{ project.description }}</p>{% endif %}
+        <div class="progress-bar"><div class="progress-fill" style="width: {{ project.completion_rate }}%"></div></div>
+        <div class="project-stats">
+            <div class="stat-item"><div class="stat-number">{{ project.total_tasks }}</div><div class="stat-label">总任务</div></div>
+            <div class="stat-item"><div class="stat-number">{{ project.completed_tasks }}</div><div class="stat-label">已完成</div></div>
+            <div class="stat-item"><div class="stat-number">{{ project.completion_rate }}%</div><div class="stat-label">完成率</div></div>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<div class="panel empty-state">
+    <h3>暂无项目</h3>
+    <p class="muted">创建带标签的任务后，项目会自动出现在这里。</p>
+    <a href="/new" class="btn btn-primary">创建任务</a>
+</div>
+{% endif %}
+{% endblock %}

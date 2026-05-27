@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% set active_page = "stats" %}
+{% block title %}统计仪表板 - 任务管理系统{% endblock %}
+{% block head %}<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>{% endblock %}
+{% block page_title %}统计仪表板{% endblock %}
+{% block page_subtitle %}用数据查看任务状态、优先级和近期趋势{% endblock %}
+{% block content %}
+<div class="content-stack">
+    <div class="subnav">
+        <a href="/stats" class="active">总览</a>
+        <a href="/stats/weekly">周报</a>
+        <a href="/stats/tags">标签</a>
+    </div>
+    <div class="stats-grid">
+        <div class="stat-card"><h3>总任务数</h3><div class="number">{{ total }}</div><div class="change positive">全部任务</div></div>
+        <div class="stat-card"><h3>待办任务</h3><div class="number">{{ todo }}</div><div class="change">待处理</div></div>
+        <div class="stat-card"><h3>进行中</h3><div class="number">{{ in_progress }}</div><div class="change">正在推进</div></div>
+        <div class="stat-card"><h3>已完成</h3><div class="number">{{ done }}</div><div class="change positive">完成率 {{ completion_rate }}%</div></div>
+    </div>
+    <section class="panel" style="padding: 22px;">
+        <h3>总体进度</h3>
+        <div class="progress-bar"><div class="progress-fill" style="width: {{ completion_rate }}%">{{ completion_rate }}%</div></div>
+        <p class="muted">已完成 {{ done }} / 总共 {{ total }} 个任务</p>
+    </section>
+    <div class="charts-grid">
+        <section class="chart-card"><h3>任务状态分布</h3><div class="chart-container"><canvas id="statusChart"></canvas></div></section>
+        <section class="chart-card"><h3>优先级分布</h3><div class="chart-container"><canvas id="priorityChart"></canvas></div></section>
+        <section class="chart-card"><h3>任务创建趋势</h3><div class="chart-container"><canvas id="trendChart"></canvas></div></section>
+        <section class="chart-card"><h3>热门标签</h3><div class="tag-cloud">{% for tag, count in top_tags %}<span class="tag-item">{{ tag }} <strong>{{ count }}</strong></span>{% else %}<p class="muted">暂无标签数据</p>{% endfor %}</div></section>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+new Chart(statusCtx, {type: 'doughnut', data: {labels: ['待办', '进行中', '已完成'], datasets: [{data: [{{ todo }}, {{ in_progress }}, {{ done }}], backgroundColor: ['#94a3b8', '#f59e0b', '#22c55e'], borderWidth: 0}]}, options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom'}}}});
+const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+new Chart(priorityCtx, {type: 'pie', data: {labels: ['高优先级', '中优先级', '低优先级'], datasets: [{data: [{{ high_count }}, {{ medium_count }}, {{ low_count }}], backgroundColor: ['#ef4444', '#f59e0b', '#22c55e'], borderWidth: 0}]}, options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom'}}}});
+const trendCtx = document.getElementById('trendChart').getContext('2d');
+new Chart(trendCtx, {type: 'line', data: {labels: {{ trend_labels | tojson }}, datasets: [{label: '任务数量', data: {{ trend_data | tojson }}, borderColor: '#4f7cff', backgroundColor: 'rgba(79, 124, 255, 0.14)', tension: 0.4, fill: true}]}, options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}, scales: {y: {beginAtZero: true, ticks: {stepSize: 1}}}}});
+</script>
+{% endblock %}

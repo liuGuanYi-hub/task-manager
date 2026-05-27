@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% set active_page = "stats" %}
+{% block title %}周报 - 任务管理系统{% endblock %}
+{% block head %}<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>{% endblock %}
+{% block page_title %}周报{% endblock %}
+{% block page_subtitle %}回看本周任务创建、完成和活跃情况{% endblock %}
+{% block content %}
+<div class="content-stack">
+    <div class="subnav">
+        <a href="/stats">总览</a>
+        <a href="/stats/weekly" class="active">周报</a>
+        <a href="/stats/tags">标签</a>
+    </div>
+    <div class="week-selector">
+        <div class="week-nav">{% if prev_week %}<a class="btn" href="/stats/weekly?date={{ prev_week }}">上周</a>{% endif %}</div>
+        <div class="week-title">{{ week_start }} 至 {{ week_end }}</div>
+        <div class="week-nav">{% if next_week %}<a class="btn" href="/stats/weekly?date={{ next_week }}">下周</a>{% endif %}</div>
+    </div>
+    <div class="stats-grid">
+        <div class="stat-card"><div class="number">{{ total_created }}</div><div class="label">新建任务</div></div>
+        <div class="stat-card"><div class="number">{{ total_completed }}</div><div class="label">完成任务</div></div>
+        <div class="stat-card"><div class="number">{{ completion_rate }}%</div><div class="label">完成率</div></div>
+        <div class="stat-card"><div class="number">{{ active_days }}</div><div class="label">活跃天数</div></div>
+    </div>
+    <section class="section">
+        <h3>每日任务趋势</h3>
+        <div class="chart-container"><canvas id="dailyChart"></canvas></div>
+    </section>
+    <section class="section">
+        <h3>本周完成的任务</h3>
+        <div class="task-list">
+            {% for task in completed_tasks %}
+            <article class="task-card done"><div class="task-title">✅ {{ task.title }}</div><div class="task-meta">{{ task.completed_date.strftime('%m-%d') }}</div></article>
+            {% else %}
+            <div class="empty-state muted">本周暂无完成任务</div>
+            {% endfor %}
+        </div>
+    </section>
+    <section class="section">
+        <h3>本周新建的任务</h3>
+        <div class="task-list">
+            {% for task in created_tasks %}
+            <article class="task-card"><div class="task-title">🆕 {{ task.title }}</div><div class="task-meta">{{ task.created_at.strftime('%m-%d') }}</div></article>
+            {% else %}
+            <div class="empty-state muted">本周暂无新建任务</div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const ctx = document.getElementById('dailyChart').getContext('2d');
+new Chart(ctx, {type: 'bar', data: {labels: {{ daily_labels | tojson }}, datasets: [{label: '任务数量', data: {{ daily_data | tojson }}, backgroundColor: 'rgba(79, 124, 255, 0.58)', borderColor: '#4f7cff', borderWidth: 1, borderRadius: 10}]}, options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}, scales: {y: {beginAtZero: true, ticks: {stepSize: 1}}}}});
+</script>
+{% endblock %}

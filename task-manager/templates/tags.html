@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% set active_page = "stats" %}
+{% block title %}标签管理 - 任务管理系统{% endblock %}
+{% block page_title %}标签管理{% endblock %}
+{% block page_subtitle %}查看最常用的任务标签和分类密度{% endblock %}
+{% block content %}
+<div class="content-stack">
+    <div class="subnav">
+        <a href="/stats">总览</a>
+        <a href="/stats/weekly">周报</a>
+        <a href="/stats/tags" class="active">标签</a>
+    </div>
+    {% if tags %}
+    <div class="tags-grid">
+        {% for tag, count in tags %}
+        <article class="tag-card">
+            <div class="tag-info">
+                <span class="tag-color" style="background: {{ colors[loop.index0 % colors|length] }}"></span>
+                <div class="tag-name">#{{ tag }}</div>
+            </div>
+            <div class="tag-count">{{ count }} 个任务</div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="panel empty-state">
+        <h3>暂无标签</h3>
+        <p class="muted">创建任务时添加标签，标签会显示在这里。</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
