@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Task Manager",
+    "subtitle": "CLI and Flask web task management system",
+    "output": "dynamic-archify-architecture.html"
+  },
+  "components": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "User",
+      "sublabel": "Operator",
+      "pos": [
+        20,
+        250
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "cli",
+      "type": "frontend",
+      "label": "CLI",
+      "sublabel": "Commands",
+      "pos": [
+        250,
+        120
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "web",
+      "type": "frontend",
+      "label": "Flask Web",
+      "sublabel": "Browser UI",
+      "pos": [
+        250,
+        380
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "core",
+      "type": "backend",
+      "label": "Task Core",
+      "sublabel": "CRUD + reports",
+      "pos": [
+        500,
+        250
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "scheduler",
+      "type": "backend",
+      "label": "Reminder Jobs",
+      "sublabel": "Daily summary",
+      "pos": [
+        500,
+        100
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "json",
+      "type": "database",
+      "label": "JSON Store",
+      "sublabel": "Local persistence",
+      "pos": [
+        760,
+        250
+      ],
+      "size": [
+        160,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Task Manager application",
+      "wraps": [
+        "cli",
+        "web",
+        "core",
+        "scheduler",
+        "json"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "user",
+      "to": "cli",
+      "label": "command",
+      "fromSide": "right",
+      "toSide": "left",
+      "route": "orthogonal-h"
+    },
+    {
+      "from": "user",
+      "to": "web",
+      "label": "browser",
+      "fromSide": "right",
+      "toSide": "left",
+      "route": "orthogonal-h"
+    },
+    {
+      "from": "cli",
+      "to": "core",
+      "label": "tasks",
+      "fromSide": "right",
+      "toSide": "top",
+      "route": "orthogonal-h"
+    },
+    {
+      "from": "web",
+      "to": "core",
+      "label": "tasks",
+      "fromSide": "right",
+      "toSide": "bottom",
+      "route": "orthogonal-h"
+    },
+    {
+      "from": "scheduler",
+      "to": "core",
+      "label": "remind",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "orthogonal-v",
+      "variant": "dashed"
+    },
+    {
+      "from": "core",
+      "to": "json",
+      "label": "read / write"
+    }
+  ],
+  "cards": []
+}
