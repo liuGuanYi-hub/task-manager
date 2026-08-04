@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% set active_page = "views" %}
+{% block title %}保存视图 - 任务管理系统{% endblock %}
+{% block page_title %}保存视图{% endblock %}
+{% block page_subtitle %}把常用筛选保存下来，下一次打开就能继续工作{% endblock %}
+{% block hero_action %}<a href="{{ url_for('new_task') }}" class="btn btn-primary">新建任务</a>{% endblock %}
+{% block content %}
+<div class="view-layout">
+    <div class="view-main">
+        <section class="view-filter-panel panel">
+            <div class="view-section-heading">
+                <div>
+                    <span class="eyebrow view-eyebrow">SMART VIEWS</span>
+                    <h2>组合筛选</h2>
+                    <p class="muted">按项目、状态、优先级、标签和截止日期定位任务。</p>
+                </div>
+                <a href="{{ url_for('views.views_page') }}" class="btn">清除筛选</a>
+            </div>
+            <form method="GET" action="{{ url_for('views.views_page') }}" class="view-filter-form">
+                <div class="view-filter-grid">
+                    <div class="form-group">
+                        <label for="view-project">项目</label>
+                        <select id="view-project" name="project_id">
+                            <option value="all" {{ 'selected' if filters.project_id == 'all' else '' }}>全部项目</option>
+                            <option value="none" {{ 'selected' if filters.project_id == 'none' else '' }}>未归属项目</option>
+                            {% for project in projects %}
+                            <option value="{{ project.id }}" {{ 'selected' if filters.project_id|string == project.id|string else '' }}>{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>状态</label>
+                        <div class="view-checks">
+                            {% for status in ['待办', '进行中', '已完成'] %}
+                            <label><input type="checkbox" name="statuses" value="{{ status }}" {{ 'checked' if status in filters.statuses else '' }}> {{ status }}</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="view-priority">优先级</label>
+                        <select id="view-priority" name="priority">
+                            <option value="">全部优先级</option>
+                            {% for priority in ['低', '中', '高'] %}
+                            <option value="{{ priority }}" {{ 'selected' if filters.priority == priority else '' }}>{{ priority }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="view-tag">标签</label>
+                        <input id="view-tag" type="text" name="tag" value="{{ filters.tag }}" placeholder="例如：学习">
+                    </div>
+                    <div class="form-group">
+                        <label for="view-due-start">截止日期起</label>
+                        <input id="view-due-start" type="date" name="due_start" value="{{ filters.due_start[:10] if filters.due_start else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="view-due-end">截止日期止</label>
+                        <input id="view-due-end" type="date" name="due_end" value="{{ filters.due_end[:10] if filters.due_end else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="view-sort">排序</label>
+                        <select id="view-sort" name="sort_by">
+                            {% for key, label in sort_options.items() %}
+                            <option value="{{ key }}" {{ 'selected' if filters.sort_by == key else '' }}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <label class="view-reverse"><input type="checkbox" name="reverse" value="1" {{ 'checked' if filters.reverse else '' }}> 倒序排列</label>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">应用筛选</button>
+                    <a href="{{ url_for('views.views_page', preset='high-incomplete') }}" class="btn">高优先级未完成</a>
+                    <a href="{{ url_for('views.views_page', preset='week-due') }}" class="btn">本周到期</a>
+                </div>
+            </form>
+        </section>
+
+        <section class="view-results panel">
+            <div class="view-results-heading">
+                <div>
+                    <span class="eyebrow view-eyebrow">RESULTS</span>
+                    <h2>{{ selected_view.name if selected_view else '当前筛选结果' }}</h2>
+                </div>
+                <span class="view-result-count">{{ tasks|length }} 个任务</span>
+            </div>
+            <div class="view-task-list">
+                {% for task in tasks %}
+                <article class="view-task-row {{ 'view-task-done' if task.status.value == '已完成' else '' }}">
+                    <div class="view-task-info">
+                        <div class="view-task-title">
+                            {% if task.status.value == '已完成' %}✅{% elif task.status.value == '进行中' %}🔄{% else %}⬜{% endif %}
+                            {{ task.title }}
+                        </div>
+                        <div class="view-task-meta">
+                            <span class="chip">{{ task.status.value }}</span>
+                            <span class="chip">优先级 {{ task.priority.value }}</span>
+                            {% if task.due_date %}<span class="chip">截止 {{ task.due_date.strftime('%Y-%m-%d %H:%M') }}</span>{% endif %}
+                            {% for tag in task.tags %}<span class="chip">#{{ tag }}</span>{% endfor %}
+                        </div>
+                    </div>
+                    <a href="{{ url_for('edit_task', task_id=task.id) }}" class="btn btn-small">编辑</a>
+                </article>
+                {% else %}
+                <div class="empty-state"><h3>没有匹配任务</h3><p class="muted">调整筛选条件，或先创建一个任务。</p></div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <aside class="view-sidebar">
+        <section class="save-view-panel panel">
+            <span class="eyebrow view-eyebrow">SAVE THIS VIEW</span>
+            <h2>保存当前筛选</h2>
+            <p class="muted">为这组条件取个名字，下次可以直接打开。</p>
+            <form method="POST" action="{{ url_for('views.save_view') }}">
+                <input type="text" name="name" placeholder="例如：本周重点" required>
+                <input type="hidden" name="project_id" value="{{ filters.project_id }}">
+                {% for status in filters.statuses %}<input type="hidden" name="statuses" value="{{ status }}">{% endfor %}
+                <input type="hidden" name="priority" value="{{ filters.priority }}">
+                <input type="hidden" name="tag" value="{{ filters.tag }}">
+                <input type="hidden" name="due_start" value="{{ filters.due_start }}">
+                <input type="hidden" name="due_end" value="{{ filters.due_end }}">
+                <input type="hidden" name="sort_by" value="{{ filters.sort_by }}">
+                <input type="hidden" name="reverse" value="{{ '1' if filters.reverse else '' }}">
+                <button type="submit" class="btn btn-primary">保存视图</button>
+            </form>
+        </section>
+
+        <section class="saved-views-panel panel">
+            <div class="view-section-heading">
+                <div><span class="eyebrow view-eyebrow">LIBRARY</span><h2>我的视图</h2></div>
+                <span class="view-result-count">{{ saved_views|length }}</span>
+            </div>
+            <div class="saved-view-list">
+                {% for view in saved_views %}
+                <article class="saved-view-card {{ 'saved-view-active' if selected_view and selected_view.id == view.id else '' }}">
+                    <a href="{{ url_for('views.saved_view_detail', view_id=view.id) }}">
+                        <strong>{{ view.name }}</strong>
+                        <span>{{ view.filters.get('statuses', [])|join('、') or '全部状态' }}</span>
+                    </a>
+                    <form method="POST" action="{{ url_for('views.delete_saved_view', view_id=view.id) }}" onsubmit="return confirm('确定删除这个保存视图？')">
+                        <button type="submit" class="saved-view-delete" aria-label="删除 {{ view.name }}">×</button>
+                    </form>
+                </article>
+                {% else %}
+                <p class="muted saved-view-empty">还没有保存视图。</p>
+                {% endfor %}
+            </div>
+        </section>
+    </aside>
+</div>
+{% endblock %}

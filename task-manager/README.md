@@ -12,6 +12,7 @@
 ✅ Web 界面  
 ✅ 显式项目和项目级任务隔离
 ✅ WeKan 式三列任务看板
+✅ 可保存的组合筛选视图
 ✅ 完整的单元测试  
 
 ## 快速开始
@@ -64,6 +65,9 @@ python main.py list-tasks --no-project
 
 #### 看板
 浏览器访问 `http://localhost:5000/board`，即可按“待办 / 进行中 / 已完成”查看任务。看板支持按项目筛选，并可在任务卡片内直接选择新状态后提交；状态变化会同步保存到 JSON，任务列表和项目详情会读取同一结果。
+
+#### 保存视图
+浏览器访问 `http://localhost:5000/views`，可以组合项目、状态、优先级、标签、截止日期和排序条件。页面内置“高优先级未完成”和“本周到期”预设，也可以给当前筛选命名保存，之后从“保存视图”导航中读取或删除。
 
 #### 查看任务
 ```bash
@@ -151,7 +155,8 @@ task-manager/
 ├── web_app.py           # Web 应用
 ├── models/              # 数据模型
 │   ├── task.py
-│   └── project.py
+│   ├── project.py
+│   └── saved_view.py
 ├── storage/             # 数据存储
 │   └── json_storage.py
 ├── commands/            # 命令处理
@@ -170,7 +175,8 @@ task-manager/
 │   ├── test_storage.py
 │   ├── test_phase_0_1.py
 │   ├── test_phase_2.py
-│   └── test_phase_3.py
+│   ├── test_phase_3.py
+│   └── test_phase_4.py
 ├── requirements.txt     # 依赖包
 └── README.md           # 说明文档
 ```
