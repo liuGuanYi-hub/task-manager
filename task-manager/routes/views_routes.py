@@ -6,7 +6,7 @@ from flask import Blueprint, redirect, render_template, request, url_for
 
 from models.saved_view import SavedView
 from models.task import Priority, Status, parse_datetime
-from storage.json_storage import JSONStorage
+from storage.factory import create_storage as JSONStorage
 
 
 views_bp = Blueprint("views", __name__, url_prefix="/views")

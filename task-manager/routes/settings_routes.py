@@ -1,6 +1,7 @@
 """设置页面路由"""
 from flask import Blueprint, render_template, request, send_file, url_for
-from storage.json_storage import ImportValidationError, JSONStorage
+from storage.json_storage import ImportValidationError
+from storage.factory import create_storage as JSONStorage
 import csv
 import json
 import io

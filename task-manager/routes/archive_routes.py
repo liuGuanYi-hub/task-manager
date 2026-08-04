@@ -1,7 +1,7 @@
 """归档任务管理路由。"""
 from flask import Blueprint, redirect, render_template, url_for
 
-from storage.json_storage import JSONStorage
+from storage.factory import create_storage as JSONStorage
 
 
 archive_bp = Blueprint("archive", __name__, url_prefix="/archive")

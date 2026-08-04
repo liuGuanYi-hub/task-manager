@@ -22,6 +22,8 @@ class ImportValidationError(ValueError):
 class JSONStorage:
     """JSON 文件存储类"""
 
+    backend_name = "json"
+
     def __init__(self, db_path: str = "tasks.json"):
         self.db_path = Path(db_path)
         self.tasks: List[Task] = []

@@ -1,6 +1,6 @@
 """标签管理路由"""
 from flask import Blueprint, render_template
-from storage.json_storage import JSONStorage
+from storage.factory import create_storage as JSONStorage
 from collections import Counter
 
 tags_bp = Blueprint("tags", __name__, url_prefix="/stats/tags")

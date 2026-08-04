@@ -1,6 +1,6 @@
 """简单的 Web 界面"""
 from flask import Flask, render_template, request, redirect, url_for
-from storage.json_storage import JSONStorage
+from storage.factory import create_storage as JSONStorage
 from models.task import Task, Priority, Status, parse_datetime
 from routes.stats_routes import stats_bp
 from routes.tags_routes import tags_bp
@@ -11,6 +11,7 @@ from routes.board_routes import board_bp
 from routes.views_routes import views_bp
 from routes.archive_routes import archive_bp
 from routes.settings_routes import settings_bp
+from routes.api_routes import api_bp
 
 app = Flask(__name__)
 storage = JSONStorage()
@@ -25,6 +26,7 @@ app.register_blueprint(board_bp)
 app.register_blueprint(views_bp)
 app.register_blueprint(archive_bp)
 app.register_blueprint(settings_bp)
+app.register_blueprint(api_bp)
 
 
 @app.route("/")

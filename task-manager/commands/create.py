@@ -2,7 +2,7 @@
 import click
 from colorama import Fore, Style
 from models.task import Task, Priority, parse_datetime
-from storage.json_storage import JSONStorage
+from storage.factory import create_storage as JSONStorage
 
 
 @click.command()

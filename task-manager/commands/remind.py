@@ -2,7 +2,7 @@
 import click
 from colorama import Fore, Style
 from datetime import datetime
-from storage.json_storage import JSONStorage
+from storage.factory import create_storage as JSONStorage
 from utils.helpers import check_due_tasks, check_overdue_tasks, get_relative_time
 
 

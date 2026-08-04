@@ -1,7 +1,7 @@
 """统计报表命令"""
 import click
 from colorama import Fore, Style
-from storage.json_storage import JSONStorage
+from storage.factory import create_storage as JSONStorage
 from models.task import Status, Priority
 from collections import Counter
 

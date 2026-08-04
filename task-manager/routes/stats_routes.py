@@ -1,6 +1,6 @@
 """统计路由"""
 from flask import Blueprint, render_template
-from storage.json_storage import JSONStorage
+from storage.factory import create_storage as JSONStorage
 from models.task import Status, Priority
 from datetime import datetime, timedelta
 from collections import Counter

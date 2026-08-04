@@ -4,7 +4,8 @@ from typing import Optional
 from flask import Blueprint, render_template, request, redirect, url_for
 
 from models.task import Status
-from storage.json_storage import ANY_PROJECT, JSONStorage
+from storage.json_storage import ANY_PROJECT
+from storage.factory import create_storage as JSONStorage
 
 
 board_bp = Blueprint("board", __name__, url_prefix="/board")

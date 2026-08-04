@@ -3,7 +3,7 @@ import click
 from colorama import Fore, Style
 
 from models.project import Project
-from storage.json_storage import JSONStorage
+from storage.factory import create_storage as JSONStorage
 
 
 @click.command("create-project")

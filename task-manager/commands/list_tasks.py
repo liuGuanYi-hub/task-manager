@@ -1,7 +1,8 @@
 """列出任务命令"""
 import click
 from colorama import Fore, Style
-from storage.json_storage import ANY_PROJECT, JSONStorage
+from storage.json_storage import ANY_PROJECT
+from storage.factory import create_storage as JSONStorage
 
 
 @click.command()

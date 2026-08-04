@@ -9,6 +9,7 @@ from commands.search import search_tasks
 from commands.stats import stats, weekly_report
 from commands.remind import remind, daily_summary
 from commands.projects import create_project, list_projects, update_project
+from commands.storage import migrate_sqlite
 
 # 初始化 colorama
 init()
@@ -33,6 +34,7 @@ cli.add_command(daily_summary)
 cli.add_command(create_project)
 cli.add_command(list_projects)
 cli.add_command(update_project)
+cli.add_command(migrate_sqlite)
 
 
 if __name__ == "__main__":

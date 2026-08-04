@@ -3,7 +3,7 @@ from flask import Blueprint, redirect, render_template, request, url_for
 
 from models.project import Project
 from models.task import Status
-from storage.json_storage import JSONStorage
+from storage.factory import create_storage as JSONStorage
 
 
 projects_bp = Blueprint("projects", __name__, url_prefix="/projects")

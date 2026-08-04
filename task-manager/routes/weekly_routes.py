@@ -1,6 +1,6 @@
 """周报路由"""
 from flask import Blueprint, render_template, request
-from storage.json_storage import JSONStorage
+from storage.factory import create_storage as JSONStorage
 from models.task import Status, parse_datetime
 from datetime import datetime, timedelta
 from urllib.parse import parse_qs

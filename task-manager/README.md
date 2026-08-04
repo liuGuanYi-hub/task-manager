@@ -14,6 +14,8 @@
 ✅ WeKan 式三列任务看板
 ✅ 可保存的组合筛选视图
 ✅ 归档、恢复和安全备份导入
+✅ JSON/SQLite 存储后端可切换
+✅ REST API（/api/v1）
 ✅ 完整的单元测试  
 
 ## 快速开始
@@ -153,6 +155,36 @@ python web_app.py
 
 归档任务：`http://localhost:5000/archive`；保存视图：`http://localhost:5000/views`；备份和导入：`http://localhost:5000/settings`。
 
+### 4. SQLite 与 REST API
+
+默认仍使用 `tasks.json`。需要切换 SQLite 时，通过环境变量选择后端：
+
+```powershell
+$env:TASK_MANAGER_STORAGE = "sqlite"
+$env:TASK_MANAGER_SQLITE_PATH = "tasks.db"
+python web_app.py
+```
+
+CLI 和 Web 使用同一个存储工厂，未设置变量时不会改变原有 JSON 行为。可以先把已有 JSON 数据迁移到新的 SQLite 文件：
+
+```bash
+python main.py migrate-sqlite tasks.json --sqlite-path tasks.db
+```
+
+迁移默认使用 `replace` 策略，重复执行同一个 JSON 文件不会重复已有 ID；`--conflict` 也支持 `remap` 和 `skip`。不要把 SQLite 目标路径指向原有 JSON 文件。
+
+REST API 基础路径为 `/api/v1`：
+
+| 方法 | 路径 | 用途 |
+|---|---|---|
+| GET | `/health` | 查看 API 和当前存储后端状态 |
+| GET/POST | `/tasks` | 查询或创建任务 |
+| GET/PATCH/DELETE | `/tasks/<id>` | 查询、更新或归档任务 |
+| GET/POST | `/projects` | 查询或创建项目 |
+| GET | `/projects/<id>` | 查询项目及其任务 |
+
+API 的 `DELETE /tasks/<id>` 与 Web/CLI 一致，执行归档而不是永久删除；`include_archived=1` 可在查询时包含归档任务。
+
 ## 项目结构
 
 ```
@@ -164,7 +196,10 @@ task-manager/
 │   ├── project.py
 │   └── saved_view.py
 ├── storage/             # 数据存储
-│   └── json_storage.py
+│   ├── interface.py
+│   ├── factory.py
+│   ├── json_storage.py
+│   └── sqlite_storage.py
 ├── commands/            # 命令处理
 │   ├── create.py
 │   ├── projects.py
@@ -173,7 +208,10 @@ task-manager/
 │   ├── delete.py
 │   ├── search.py
 │   ├── stats.py
-│   └── remind.py
+│   ├── remind.py
+│   └── storage.py
+├── routes/              # Flask 页面和 API 路由
+│   └── api_routes.py
 ├── utils/               # 工具函数
 │   └── helpers.py
 ├── tests/               # 测试文件
@@ -183,7 +221,8 @@ task-manager/
 │   ├── test_phase_2.py
 │   ├── test_phase_3.py
 │   ├── test_phase_4.py
-│   └── test_phase_5.py
+│   ├── test_phase_5.py
+│   └── test_phase_6.py
 ├── requirements.txt     # 依赖包
 └── README.md           # 说明文档
 ```
