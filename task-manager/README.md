@@ -185,6 +185,34 @@ REST API 基础路径为 `/api/v1`：
 
 API 的 `DELETE /tasks/<id>` 与 Web/CLI 一致，执行归档而不是永久删除；`include_archived=1` 可在查询时包含归档任务。
 
+#### API 认证
+
+本地未配置 token 时保持开发兼容模式。部署或对外提供 API 时设置环境变量：
+
+```powershell
+$env:TASK_MANAGER_API_TOKEN = "在安全配置中设置的值"
+python web_app.py
+```
+
+除 `/api/v1/health` 外，请求必须携带：
+
+```text
+Authorization: Bearer <已配置的 token>
+```
+
+服务不会把 token 写入日志或响应。token 建议通过系统服务管理器、部署平台密钥或其他安全配置注入，不要提交到 Git。
+
+#### API 分页
+
+任务集合、项目集合和项目详情中的任务支持 `page` 与 `page_size` 参数，默认每页 20 条，最大 100 条：
+
+```text
+GET /api/v1/tasks?page=2&page_size=20&sort_by=id
+GET /api/v1/projects?page=1&page_size=10
+```
+
+响应的 `meta` 包含 `page`、`page_size`、`pages`、`total`、`count` 和 `returned`，其中 `returned` 是当前页实际返回数量。
+
 ## 项目结构
 
 ```

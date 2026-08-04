@@ -1,5 +1,8 @@
 """面向脚本和其他客户端的 REST API。"""
 
+import hmac
+import math
+import os
 from pathlib import Path
 from typing import Any, Dict
 
@@ -12,6 +15,9 @@ from storage.factory import create_storage as JSONStorage
 
 
 api_bp = Blueprint("api", __name__, url_prefix="/api/v1")
+DEFAULT_PAGE_SIZE = 20
+MAX_PAGE_SIZE = 100
+API_TOKEN_ENV = "TASK_MANAGER_API_TOKEN"
 
 
 class ApiInputError(ValueError):
@@ -22,6 +28,34 @@ class ApiInputError(ValueError):
 
 def _error(message: str, status: int = 400, code: str = "invalid_request"):
     return jsonify({"error": {"code": code, "message": message}}), status
+
+
+def _auth_error():
+    response, status = _error("需要有效的 Bearer Token", 401, "authentication_required")
+    response.headers["WWW-Authenticate"] = "Bearer"
+    return response, status
+
+
+@api_bp.before_request
+def authenticate_api_request():
+    """配置 API token 后保护除健康检查以外的所有 API。"""
+    if request.endpoint == "api.health":
+        return None
+
+    configured_token = os.getenv(API_TOKEN_ENV, "").strip()
+    if not configured_token:
+        return None
+
+    authorization = request.headers.get("Authorization", "")
+    scheme, separator, supplied_token = authorization.partition(" ")
+    if (
+        not separator
+        or scheme.lower() != "bearer"
+        or not supplied_token
+        or not hmac.compare_digest(supplied_token.strip(), configured_token)
+    ):
+        return _auth_error()
+    return None
 
 
 def _payload() -> Dict[str, Any]:
@@ -107,6 +141,34 @@ def _project_data(project: Project, storage) -> dict:
     return result
 
 
+def _pagination_args():
+    """解析并限制集合接口的分页参数。"""
+    try:
+        page = int(request.args.get("page", "1"))
+        page_size = int(request.args.get("page_size", str(DEFAULT_PAGE_SIZE)))
+    except ValueError as exc:
+        raise ApiInputError("page 和 page_size 必须是整数") from exc
+    if page < 1:
+        raise ApiInputError("page 必须大于等于 1")
+    if page_size < 1 or page_size > MAX_PAGE_SIZE:
+        raise ApiInputError(f"page_size 必须在 1 到 {MAX_PAGE_SIZE} 之间")
+    return page, page_size
+
+
+def _paginate(items, page: int, page_size: int):
+    total = len(items)
+    start = (page - 1) * page_size
+    page_items = items[start : start + page_size]
+    return page_items, {
+        "page": page,
+        "page_size": page_size,
+        "pages": math.ceil(total / page_size) if total else 0,
+        "total": total,
+        "count": total,
+        "returned": len(page_items),
+    }
+
+
 @api_bp.errorhandler(ApiInputError)
 def handle_api_input_error(error):
     return _error(str(error))
@@ -130,6 +192,7 @@ def health():
 @api_bp.route("/tasks/", methods=["GET"])
 def list_tasks_api():
     storage = JSONStorage()
+    page, page_size = _pagination_args()
     project_raw = request.args.get("project_id")
     if project_raw in (None, "", "all"):
         project_id = ANY_PROJECT
@@ -159,7 +222,8 @@ def list_tasks_api():
         )
     except ValueError as exc:
         return _error(str(exc))
-    return jsonify({"data": [_task_data(task, storage) for task in tasks], "meta": {"count": len(tasks)}})
+    page_tasks, meta = _paginate(tasks, page, page_size)
+    return jsonify({"data": [_task_data(task, storage) for task in page_tasks], "meta": meta})
 
 
 @api_bp.route("/tasks", methods=["POST"])
@@ -208,8 +272,10 @@ def archive_task_api(task_id: int):
 @api_bp.route("/projects/", methods=["GET"])
 def list_projects_api():
     storage = JSONStorage()
+    page, page_size = _pagination_args()
     projects = storage.get_projects()
-    return jsonify({"data": [_project_data(project, storage) for project in projects]})
+    page_projects, meta = _paginate(projects, page, page_size)
+    return jsonify({"data": [_project_data(project, storage) for project in page_projects], "meta": meta})
 
 
 @api_bp.route("/projects", methods=["POST"])
@@ -235,11 +301,14 @@ def get_project_api(project_id: int):
         return _error("项目不存在", 404, "not_found")
     include_archived = request.args.get("include_archived", "").lower() in {"1", "true", "yes"}
     tasks = storage.get_all(include_archived=include_archived, project_id=project_id)
+    page, page_size = _pagination_args()
+    page_tasks, meta = _paginate(tasks, page, page_size)
     return jsonify(
         {
             "data": {
                 **_project_data(project, storage),
-                "tasks": [_task_data(task, storage) for task in tasks],
-            }
+                "tasks": [_task_data(task, storage) for task in page_tasks],
+            },
+            "meta": meta,
         }
     )

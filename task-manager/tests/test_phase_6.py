@@ -2,6 +2,7 @@
 
 import json
 
+import pytest
 from click.testing import CliRunner
 
 from commands.storage import migrate_sqlite
@@ -12,6 +13,11 @@ from storage.factory import create_storage
 from storage.json_storage import JSONStorage
 from storage.sqlite_storage import SQLiteStorage
 from web_app import app
+
+
+@pytest.fixture(autouse=True)
+def disable_api_token_for_phase_6_tests(monkeypatch):
+    monkeypatch.delenv("TASK_MANAGER_API_TOKEN", raising=False)
 
 
 def test_sqlite_persists_all_entities_and_archive_state(tmp_path):
