@@ -36,7 +36,7 @@ def settings_page():
 def export_data(format):
     """导出数据"""
     storage = JSONStorage()
-    tasks = storage.get_all()
+    tasks = storage.get_all(include_archived=True)
 
     if format == "json":
         data = {
@@ -55,7 +55,10 @@ def export_data(format):
     if format == "csv":
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["ID", "标题", "描述", "优先级", "状态", "创建时间", "截止时间", "标签"])
+        writer.writerow([
+            "ID", "标题", "描述", "优先级", "状态", "创建时间", "截止时间",
+            "更新时间", "完成时间", "已归档", "标签",
+        ])
 
         for task in tasks:
             writer.writerow(
@@ -67,6 +70,9 @@ def export_data(format):
                     task.status.value,
                     task.created_at.strftime("%Y-%m-%d"),
                     task.due_date.strftime("%Y-%m-%d") if task.due_date else "",
+                    task.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    task.completed_at.strftime("%Y-%m-%d %H:%M:%S") if task.completed_at else "",
+                    "是" if task.archived else "否",
                     ", ".join(task.tags),
                 ]
             )

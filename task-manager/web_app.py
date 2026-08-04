@@ -1,7 +1,7 @@
 """简单的 Web 界面"""
 from flask import Flask, render_template, request, redirect, url_for
 from storage.json_storage import JSONStorage
-from models.task import Task, Priority, Status
+from models.task import Task, Priority, Status, parse_datetime
 from routes.stats_routes import stats_bp
 from routes.tags_routes import tags_bp
 from routes.weekly_routes import weekly_bp
@@ -54,6 +54,11 @@ def new_task():
         title = request.form.get("title")
         description = request.form.get("description", "")
         priority = Priority(request.form.get("priority", "中"))
+        due_date_raw = request.form.get("due_date", "").strip()
+        try:
+            due_date = parse_datetime(due_date_raw) if due_date_raw else None
+        except ValueError:
+            return "截止时间格式无效，请使用日期时间输入框重新提交", 400
         tags_str = request.form.get("tags", "")
         tags = [t.strip() for t in tags_str.split(",") if t.strip()] if tags_str else []
 
@@ -61,6 +66,7 @@ def new_task():
             title=title,
             description=description,
             priority=priority,
+            due_date=due_date,
             tags=tags,
         )
         storage.add(task)
@@ -89,6 +95,11 @@ def update_task(task_id):
     task.description = request.form.get("description", "")
     task.priority = Priority(request.form.get("priority", "中"))
     task.status = Status(request.form.get("status", "待办"))
+    due_date_raw = request.form.get("due_date", "").strip()
+    try:
+        task.due_date = parse_datetime(due_date_raw) if due_date_raw else None
+    except ValueError:
+        return "截止时间格式无效，请使用日期时间输入框重新提交", 400
     tags_str = request.form.get("tags", "")
     task.tags = [t.strip() for t in tags_str.split(",") if t.strip()] if tags_str else []
 

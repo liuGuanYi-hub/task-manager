@@ -1,11 +1,21 @@
 """日历视图路由"""
 from flask import Blueprint, render_template, request
 from storage.json_storage import JSONStorage
-from datetime import datetime
+from models.task import Task, parse_datetime
+from datetime import date, datetime
 from calendar import monthrange
+from typing import List
 from urllib.parse import parse_qs
 
 calendar_bp = Blueprint("calendar", __name__, url_prefix="/calendar")
+
+
+def get_tasks_for_date(tasks: List[Task], target_date: date) -> List[Task]:
+    """按截止日期获取日历任务，而不是按创建日期重复展示。"""
+    return [
+        task for task in tasks
+        if not task.archived and task.due_date and task.due_date.date() == target_date
+    ]
 
 
 @calendar_bp.route("/")
@@ -15,7 +25,12 @@ def calendar_view():
     tasks = storage.get_all()
 
     params = parse_qs(request.query_string.decode())
-    current_date = datetime.fromisoformat(params["date"][0]) if "date" in params else datetime.now()
+    current_date = datetime.now()
+    if "date" in params:
+        try:
+            current_date = parse_datetime(params["date"][0], current_date) or current_date
+        except ValueError:
+            pass
 
     year = current_date.year
     month = current_date.month
@@ -28,7 +43,7 @@ def calendar_view():
 
     for day in range(1, days_in_month + 1):
         date = datetime(year, month, day)
-        day_tasks = [t for t in tasks if t.created_at.date() == date.date()]
+        day_tasks = get_tasks_for_date(tasks, date.date())
         priorities = [
             "high" if task.priority.value == "高" else "medium" if task.priority.value == "中" else "low"
             for task in day_tasks
@@ -51,7 +66,7 @@ def calendar_view():
 
         date_str = day["date"]
         date_value = datetime.fromisoformat(date_str).date()
-        day_tasks = [t for t in tasks if t.created_at.date() == date_value]
+        day_tasks = get_tasks_for_date(tasks, date_value)
         tasks_json[date_str] = [
             {
                 "title": t.title,

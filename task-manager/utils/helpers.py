@@ -1,6 +1,6 @@
 """工具函数"""
 from datetime import datetime, timedelta
-from models.task import Task
+from models.task import Task, Status
 from typing import List
 
 
@@ -46,7 +46,7 @@ def check_due_tasks(tasks: List[Task], days: int = 3) -> List[Task]:
     
     due_tasks = []
     for task in tasks:
-        if task.due_date and now <= task.due_date <= deadline:
+        if not task.archived and task.status != Status.DONE and task.due_date and now <= task.due_date <= deadline:
             due_tasks.append(task)
     
     return due_tasks
@@ -58,7 +58,7 @@ def check_overdue_tasks(tasks: List[Task]) -> List[Task]:
     
     overdue_tasks = []
     for task in tasks:
-        if task.due_date and task.due_date < now and task.status.value != "已完成":
+        if not task.archived and task.due_date and task.due_date < now and task.status != Status.DONE:
             overdue_tasks.append(task)
     
     return overdue_tasks

@@ -30,6 +30,9 @@ python main.py create-task "学习 Python"
 # 创建带描述和优先级的任务
 python main.py create-task "完成项目报告" -d "周五前提交" -p 高
 
+# 创建带截止时间的任务
+python main.py create-task "提交作业" --due-date "2026-08-08 18:00"
+
 # 添加标签
 python main.py create-task "阅读技术文章" -t 学习 -t 技术
 ```
@@ -86,6 +89,12 @@ python main.py update-task 1 -s 进行中
 
 # 更新优先级
 python main.py update-task 1 -p 高
+
+# 更新截止时间
+python main.py update-task 1 --due-date "2026-08-08 18:00"
+
+# 清除截止时间
+python main.py update-task 1 --due-date ""
 ```
 
 #### 删除任务

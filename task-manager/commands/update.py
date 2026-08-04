@@ -2,7 +2,7 @@
 import click
 from colorama import Fore, Style
 from storage.json_storage import JSONStorage
-from models.task import Task, Priority, Status
+from models.task import Task, Priority, Status, parse_datetime
 
 
 @click.command()
@@ -11,7 +11,8 @@ from models.task import Task, Priority, Status
 @click.option("--description", "-d", help="新描述")
 @click.option("--priority", "-p", type=click.Choice(["低", "中", "高"]), help="新优先级")
 @click.option("--status", "-s", type=click.Choice(["待办", "进行中", "已完成"]), help="新状态")
-def update_task(task_id: int, title: str, description: str, priority: str, status: str):
+@click.option("--due-date", help="新截止时间，格式：YYYY-MM-DD 或 YYYY-MM-DD HH:MM；传空值可清除")
+def update_task(task_id: int, title: str, description: str, priority: str, status: str, due_date: str):
     """更新任务"""
     storage = JSONStorage()
     task = storage.get_by_id(task_id)
@@ -31,9 +32,16 @@ def update_task(task_id: int, title: str, description: str, priority: str, statu
     if status:
         status_map = {"待办": Status.TODO, "进行中": Status.IN_PROGRESS, "已完成": Status.DONE}
         task.status = status_map[status]
+    if due_date is not None:
+        try:
+            task.due_date = parse_datetime(due_date) if due_date else None
+        except ValueError as exc:
+            raise click.BadParameter("截止时间格式应为 YYYY-MM-DD 或 YYYY-MM-DD HH:MM", param_hint="--due-date") from exc
 
     storage.update(task)
     
     click.echo(f"{Fore.GREEN}✅ 任务已更新：{Style.BRIGHT}{task.title}{Style.RESET_ALL}")
     click.echo(f"   状态：{task.status.value}")
     click.echo(f"   优先级：{task.priority.value}")
+    if task.due_date:
+        click.echo(f"   截止时间：{task.due_date.strftime('%Y-%m-%d %H:%M')}")

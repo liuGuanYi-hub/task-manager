@@ -2,7 +2,6 @@
 import click
 from colorama import Fore, Style
 from storage.json_storage import JSONStorage
-from models.task import Status
 
 
 @click.command()
@@ -12,15 +11,7 @@ from models.task import Status
 def list_tasks(status: str = None, priority: str = None, tag: str = None):
     """列出任务"""
     storage = JSONStorage()
-    tasks = storage.get_all()
-
-    # 筛选任务
-    if status:
-        tasks = [t for t in tasks if t.status.value == status]
-    if priority:
-        tasks = [t for t in tasks if t.priority.value == priority]
-    if tag:
-        tasks = [t for t in tasks if tag in t.tags]
+    tasks = storage.query(status=status, priority=priority, tag=tag)
 
     if not tasks:
         click.echo(f"{Fore.YELLOW}暂无任务{Style.RESET_ALL}")

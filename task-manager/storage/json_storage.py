@@ -39,9 +39,43 @@ class JSONStorage:
         self._save()
         return task
 
-    def get_all(self) -> List[Task]:
-        """获取所有任务"""
-        return self.tasks
+    def get_all(self, include_archived: bool = False) -> List[Task]:
+        """获取任务，默认隐藏已归档任务。"""
+        if include_archived:
+            return self.tasks
+        return [task for task in self.tasks if not task.archived]
+
+    def query(
+        self,
+        status: Optional[str] = None,
+        priority: Optional[str] = None,
+        tag: Optional[str] = None,
+        include_archived: bool = False,
+        sort_by: str = "created_at",
+        reverse: bool = False,
+    ) -> List[Task]:
+        """统一执行任务筛选和排序。"""
+        tasks = self.get_all(include_archived=include_archived)
+        if status:
+            tasks = [task for task in tasks if task.status.value == status]
+        if priority:
+            tasks = [task for task in tasks if task.priority.value == priority]
+        if tag:
+            tasks = [task for task in tasks if tag in task.tags]
+
+        sortable_fields = {"id", "title", "created_at", "due_date", "updated_at", "completed_at"}
+        if sort_by not in sortable_fields:
+            raise ValueError(f"不支持的排序字段：{sort_by}")
+
+        def sort_key(task: Task):
+            value = getattr(task, sort_by)
+            return (value is None, value)
+
+        return sorted(
+            tasks,
+            key=sort_key,
+            reverse=reverse,
+        )
 
     def get_by_id(self, task_id: int) -> Optional[Task]:
         """根据 ID 获取任务"""
@@ -54,10 +88,35 @@ class JSONStorage:
         """更新任务"""
         for i, t in enumerate(self.tasks):
             if t.id == task.id:
+                task.touch()
                 self.tasks[i] = task
                 self._save()
                 return True
         return False
+
+    def archive(self, task_id: int) -> bool:
+        """归档任务，保留数据但从默认列表隐藏。"""
+        task = self.get_by_id(task_id)
+        if task is None or task.archived:
+            return False
+        task.archived = True
+        task.touch()
+        self._save()
+        return True
+
+    def restore(self, task_id: int) -> bool:
+        """恢复已归档任务。"""
+        task = self.get_by_id(task_id)
+        if task is None or not task.archived:
+            return False
+        task.archived = False
+        task.touch()
+        self._save()
+        return True
+
+    def get_archived(self) -> List[Task]:
+        """获取已归档任务。"""
+        return [task for task in self.tasks if task.archived]
 
     def delete(self, task_id: int) -> bool:
         """删除任务"""

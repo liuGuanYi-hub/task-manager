@@ -1,7 +1,7 @@
 """周报路由"""
 from flask import Blueprint, render_template, request
 from storage.json_storage import JSONStorage
-from models.task import Status
+from models.task import Status, parse_datetime
 from datetime import datetime, timedelta
 from urllib.parse import parse_qs
 
@@ -15,7 +15,12 @@ def weekly_report():
     tasks = storage.get_all()
 
     params = parse_qs(request.query_string.decode())
-    current_date = datetime.fromisoformat(params["date"][0]) if "date" in params else datetime.now()
+    current_date = datetime.now()
+    if "date" in params:
+        try:
+            current_date = parse_datetime(params["date"][0], current_date) or current_date
+        except ValueError:
+            pass
 
     week_start = current_date - timedelta(days=current_date.weekday())
     week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
