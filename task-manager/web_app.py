@@ -59,6 +59,13 @@ def new_task():
             due_date = parse_datetime(due_date_raw) if due_date_raw else None
         except ValueError:
             return "截止时间格式无效，请使用日期时间输入框重新提交", 400
+        project_id_raw = request.form.get("project_id", "").strip()
+        try:
+            project_id = int(project_id_raw) if project_id_raw else None
+        except ValueError:
+            return "项目 ID 格式无效", 400
+        if project_id is not None and storage.get_project_by_id(project_id) is None:
+            return "项目不存在", 400
         tags_str = request.form.get("tags", "")
         tags = [t.strip() for t in tags_str.split(",") if t.strip()] if tags_str else []
 
@@ -68,11 +75,18 @@ def new_task():
             priority=priority,
             due_date=due_date,
             tags=tags,
+            project_id=project_id,
         )
         storage.add(task)
         return redirect(url_for("index"))
 
-    return render_template("task_form.html", mode="new", action=url_for("new_task"), task=None)
+    return render_template(
+        "task_form.html",
+        mode="new",
+        action=url_for("new_task"),
+        task=None,
+        projects=storage.get_projects(),
+    )
 
 
 @app.route("/task/<int:task_id>/edit")
@@ -81,7 +95,13 @@ def edit_task(task_id):
     task = storage.get_by_id(task_id)
     if not task:
         return "任务不存在", 404
-    return render_template("task_form.html", mode="edit", action=url_for("update_task", task_id=task.id), task=task)
+    return render_template(
+        "task_form.html",
+        mode="edit",
+        action=url_for("update_task", task_id=task.id),
+        task=task,
+        projects=storage.get_projects(),
+    )
 
 
 @app.route("/task/<int:task_id>/update", methods=["POST"])
@@ -100,6 +120,14 @@ def update_task(task_id):
         task.due_date = parse_datetime(due_date_raw) if due_date_raw else None
     except ValueError:
         return "截止时间格式无效，请使用日期时间输入框重新提交", 400
+    if "project_id" in request.form:
+        project_id_raw = request.form.get("project_id", "").strip()
+        try:
+            task.project_id = int(project_id_raw) if project_id_raw else None
+        except ValueError:
+            return "项目 ID 格式无效", 400
+        if task.project_id is not None and storage.get_project_by_id(task.project_id) is None:
+            return "项目不存在", 400
     tags_str = request.form.get("tags", "")
     task.tags = [t.strip() for t in tags_str.split(",") if t.strip()] if tags_str else []
 

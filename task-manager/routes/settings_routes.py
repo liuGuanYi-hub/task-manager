@@ -37,11 +37,14 @@ def export_data(format):
     """导出数据"""
     storage = JSONStorage()
     tasks = storage.get_all(include_archived=True)
+    projects = storage.get_projects()
 
     if format == "json":
         data = {
             "export_date": datetime.now().isoformat(),
+            "total_projects": len(projects),
             "total_tasks": len(tasks),
+            "projects": [project.to_dict() for project in projects],
             "tasks": [task.to_dict() for task in tasks],
         }
         json_str = json.dumps(data, ensure_ascii=False, indent=2)
@@ -57,7 +60,7 @@ def export_data(format):
         writer = csv.writer(output)
         writer.writerow([
             "ID", "标题", "描述", "优先级", "状态", "创建时间", "截止时间",
-            "更新时间", "完成时间", "已归档", "标签",
+            "更新时间", "完成时间", "已归档", "项目 ID", "项目名称", "标签",
         ])
 
         for task in tasks:
@@ -73,6 +76,8 @@ def export_data(format):
                     task.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
                     task.completed_at.strftime("%Y-%m-%d %H:%M:%S") if task.completed_at else "",
                     "是" if task.archived else "否",
+                    task.project_id or "",
+                    storage.get_project_by_id(task.project_id).name if task.project_id and storage.get_project_by_id(task.project_id) else "",
                     ", ".join(task.tags),
                 ]
             )

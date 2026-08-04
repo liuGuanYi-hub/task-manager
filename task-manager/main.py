@@ -8,6 +8,7 @@ from commands.delete import delete_task
 from commands.search import search_tasks
 from commands.stats import stats, weekly_report
 from commands.remind import remind, daily_summary
+from commands.projects import create_project, list_projects, update_project
 
 # 初始化 colorama
 init()
@@ -29,6 +30,9 @@ cli.add_command(stats)
 cli.add_command(weekly_report)
 cli.add_command(remind)
 cli.add_command(daily_summary)
+cli.add_command(create_project)
+cli.add_command(list_projects)
+cli.add_command(update_project)
 
 
 if __name__ == "__main__":

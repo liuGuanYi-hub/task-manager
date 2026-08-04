@@ -61,6 +61,7 @@ class Task:
     completed_at: Optional[datetime] = None
     archived: bool = False
     tags: List[str] = field(default_factory=list)
+    project_id: Optional[int] = None
     id: Optional[int] = None
 
     def touch(self, now: Optional[datetime] = None) -> None:
@@ -85,13 +86,20 @@ class Task:
             "updated_at": self.updated_at.isoformat(),
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "archived": self.archived,
-            "tags": self.tags
+            "tags": self.tags,
+            "project_id": self.project_id,
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> "Task":
         """从字典创建任务"""
         created_at = parse_datetime(data.get("created_at"), datetime.now()) or datetime.now()
+        project_id = data.get("project_id")
+        if project_id is not None:
+            try:
+                project_id = int(project_id)
+            except (TypeError, ValueError):
+                project_id = None
         return cls(
             id=data.get("id"),
             title=data["title"],
@@ -103,7 +111,8 @@ class Task:
             updated_at=parse_datetime(data.get("updated_at"), created_at) or created_at,
             completed_at=parse_datetime(data.get("completed_at")),
             archived=parse_bool(data.get("archived"), False),
-            tags=data.get("tags", [])
+            tags=data.get("tags", []),
+            project_id=project_id,
         )
 
     def __str__(self) -> str:

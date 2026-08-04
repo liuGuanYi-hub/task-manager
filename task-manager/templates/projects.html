@@ -2,12 +2,13 @@
 {% set active_page = "projects" %}
 {% block title %}项目管理 - 任务管理系统{% endblock %}
 {% block page_title %}项目管理{% endblock %}
-{% block page_subtitle %}按标签聚合任务，快速查看每个项目的完成度{% endblock %}
+{% block page_subtitle %}独立项目管理，任务通过项目关系进行隔离{% endblock %}
+{% block hero_action %}<a href="{{ url_for('projects.new_project') }}" class="btn btn-primary">新建项目</a>{% endblock %}
 {% block content %}
 {% if projects %}
 <div class="projects-grid">
     {% for project in projects %}
-    <article class="project-card" onclick="location.href='/projects/{{ project.id }}'">
+    <article class="project-card" onclick="location.href='{{ url_for('projects.project_detail', project_id=project.id) }}'">
         <div class="project-header"><div class="project-title">{{ project.name }}</div></div>
         {% if project.description %}<p class="project-description">{{ project.description }}</p>{% endif %}
         <div class="progress-bar"><div class="progress-fill" style="width: {{ project.completion_rate }}%"></div></div>
@@ -22,8 +23,8 @@
 {% else %}
 <div class="panel empty-state">
     <h3>暂无项目</h3>
-    <p class="muted">创建带标签的任务后，项目会自动出现在这里。</p>
-    <a href="/new" class="btn btn-primary">创建任务</a>
+    <p class="muted">先创建项目，再将任务归属到对应项目；标签仍只用于分类。</p>
+    <a href="{{ url_for('projects.new_project') }}" class="btn btn-primary">创建项目</a>
 </div>
 {% endif %}
 {% endblock %}

@@ -10,6 +10,7 @@
 ✅ 任务提醒功能  
 ✅ 每日摘要  
 ✅ Web 界面  
+✅ 显式项目和项目级任务隔离
 ✅ 完整的单元测试  
 
 ## 快速开始
@@ -35,7 +36,30 @@ python main.py create-task "提交作业" --due-date "2026-08-08 18:00"
 
 # 添加标签
 python main.py create-task "阅读技术文章" -t 学习 -t 技术
+
+# 将任务归属到项目
+python main.py create-task "完成项目报告" --project-id 1
 ```
+
+#### 项目管理
+```bash
+# 创建项目
+python main.py create-project "个人学习" -d "课程和技术学习任务"
+
+# 查看项目
+python main.py list-projects
+
+# 更新项目
+python main.py update-project 1 --name "长期学习"
+
+# 只查看某个项目的任务
+python main.py list-tasks --project-id 1
+
+# 只查看未归属项目的任务
+python main.py list-tasks --no-project
+```
+
+项目与标签是两个独立概念：`project_id` 用于项目级隔离，标签继续用于跨项目分类。历史 JSON 中没有 `project_id` 的任务会保留为未归属项目，不会根据标签自动迁移。
 
 #### 查看任务
 ```bash
@@ -122,11 +146,13 @@ task-manager/
 ├── main.py              # 主程序入口
 ├── web_app.py           # Web 应用
 ├── models/              # 数据模型
-│   └── task.py
+│   ├── task.py
+│   └── project.py
 ├── storage/             # 数据存储
 │   └── json_storage.py
 ├── commands/            # 命令处理
 │   ├── create.py
+│   ├── projects.py
 │   ├── list_tasks.py
 │   ├── update.py
 │   ├── delete.py
