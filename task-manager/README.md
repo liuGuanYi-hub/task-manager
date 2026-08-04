@@ -11,6 +11,7 @@
 ✅ 每日摘要  
 ✅ Web 界面  
 ✅ 显式项目和项目级任务隔离
+✅ WeKan 式三列任务看板
 ✅ 完整的单元测试  
 
 ## 快速开始
@@ -60,6 +61,9 @@ python main.py list-tasks --no-project
 ```
 
 项目与标签是两个独立概念：`project_id` 用于项目级隔离，标签继续用于跨项目分类。历史 JSON 中没有 `project_id` 的任务会保留为未归属项目，不会根据标签自动迁移。
+
+#### 看板
+浏览器访问 `http://localhost:5000/board`，即可按“待办 / 进行中 / 已完成”查看任务。看板支持按项目筛选，并可在任务卡片内直接选择新状态后提交；状态变化会同步保存到 JSON，任务列表和项目详情会读取同一结果。
 
 #### 查看任务
 ```bash
@@ -163,7 +167,10 @@ task-manager/
 │   └── helpers.py
 ├── tests/               # 测试文件
 │   ├── test_task.py
-│   └── test_storage.py
+│   ├── test_storage.py
+│   ├── test_phase_0_1.py
+│   ├── test_phase_2.py
+│   └── test_phase_3.py
 ├── requirements.txt     # 依赖包
 └── README.md           # 说明文档
 ```

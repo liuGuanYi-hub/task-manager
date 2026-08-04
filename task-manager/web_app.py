@@ -7,6 +7,7 @@ from routes.tags_routes import tags_bp
 from routes.weekly_routes import weekly_bp
 from routes.calendar_routes import calendar_bp
 from routes.projects_routes import projects_bp
+from routes.board_routes import board_bp
 from routes.settings_routes import settings_bp
 
 app = Flask(__name__)
@@ -18,6 +19,7 @@ app.register_blueprint(tags_bp)
 app.register_blueprint(weekly_bp)
 app.register_blueprint(calendar_bp)
 app.register_blueprint(projects_bp)
+app.register_blueprint(board_bp)
 app.register_blueprint(settings_bp)
 
 
