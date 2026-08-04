@@ -1,6 +1,6 @@
 """设置页面路由"""
-from flask import Blueprint, render_template, send_file
-from storage.json_storage import JSONStorage
+from flask import Blueprint, render_template, request, send_file, url_for
+from storage.json_storage import ImportValidationError, JSONStorage
 import csv
 import json
 import io
@@ -10,12 +10,8 @@ from pathlib import Path
 settings_bp = Blueprint("settings", __name__, url_prefix="/settings")
 
 
-@settings_bp.route("/")
-def settings_page():
-    """设置页面"""
-    storage = JSONStorage()
-    tasks = storage.get_all()
-
+def _render_settings(storage: JSONStorage, import_error=None, import_success=None):
+    """构造设置页面，统一展示数据和导入结果。"""
     db_path = Path(storage.db_path)
     if db_path.exists():
         file_size = f"{db_path.stat().st_size / 1024:.2f} KB"
@@ -26,9 +22,22 @@ def settings_page():
 
     return render_template(
         "settings.html",
-        total_tasks=len(tasks),
+        total_tasks=len(storage.get_all()),
+        total_archived=len(storage.get_archived()),
+        total_projects=len(storage.get_projects()),
         file_size=file_size,
         last_modified=last_modified,
+        import_error=import_error,
+        import_success=import_success,
+    )
+
+
+@settings_bp.route("/")
+def settings_page():
+    """设置页面"""
+    return _render_settings(
+        JSONStorage(),
+        import_success=request.args.get("imported"),
     )
 
 
@@ -37,16 +46,9 @@ def export_data(format):
     """导出数据"""
     storage = JSONStorage()
     tasks = storage.get_all(include_archived=True)
-    projects = storage.get_projects()
 
     if format == "json":
-        data = {
-            "export_date": datetime.now().isoformat(),
-            "total_projects": len(projects),
-            "total_tasks": len(tasks),
-            "projects": [project.to_dict() for project in projects],
-            "tasks": [task.to_dict() for task in tasks],
-        }
+        data = storage.export_payload(include_archived=True)
         json_str = json.dumps(data, ensure_ascii=False, indent=2)
         return send_file(
             io.BytesIO(json_str.encode("utf-8")),
@@ -91,3 +93,48 @@ def export_data(format):
         )
 
     return "不支持的格式", 400
+
+
+@settings_bp.route("/backup")
+@settings_bp.route("/backup/json")
+def backup_data():
+    """下载包含归档任务、项目和保存视图的完整备份。"""
+    storage = JSONStorage()
+    data = storage.export_payload(include_archived=True)
+    data["backup"] = True
+    json_str = json.dumps(data, ensure_ascii=False, indent=2)
+    return send_file(
+        io.BytesIO(json_str.encode("utf-8")),
+        mimetype="application/json",
+        as_attachment=True,
+        download_name=f"task_manager_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+    )
+
+
+@settings_bp.route("/import", methods=["POST"])
+def import_data():
+    """导入 JSON 备份，校验失败时保持现有数据不变。"""
+    storage = JSONStorage()
+    uploaded = request.files.get("backup_file")
+    if uploaded is None or not uploaded.filename:
+        return _render_settings(storage, import_error="请选择 JSON 备份文件"), 400
+
+    raw = uploaded.read(5 * 1024 * 1024 + 1)
+    if len(raw) > 5 * 1024 * 1024:
+        return _render_settings(storage, import_error="导入文件不能超过 5 MB"), 400
+
+    try:
+        payload = json.loads(raw.decode("utf-8-sig"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        return _render_settings(storage, import_error="导入文件不是有效的 UTF-8 JSON"), 400
+
+    conflict = request.form.get("conflict", "remap")
+    try:
+        result = storage.import_payload(payload, conflict=conflict)
+    except ImportValidationError as exc:
+        return _render_settings(storage, import_error=str(exc)), 400
+    except (OSError, TypeError, ValueError) as exc:
+        return _render_settings(storage, import_error=f"导入失败，原数据未改变：{exc}"), 400
+
+    summary = f"导入完成：任务 {result['tasks']} 个，项目 {result['projects']} 个，视图 {result['saved_views']} 个"
+    return redirect(url_for("settings.settings_page", imported=summary))

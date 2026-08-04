@@ -4,6 +4,8 @@
 {% block page_title %}设置{% endblock %}
 {% block page_subtitle %}管理外观、数据导出和系统信息{% endblock %}
 {% block content %}
+{% if import_error %}<div class="notice notice-error">{{ import_error }}</div>{% endif %}
+{% if import_success %}<div class="notice notice-success">{{ import_success }}</div>{% endif %}
 <section class="settings-section">
     <h2>外观设置</h2>
     <div class="setting-item">
@@ -26,11 +28,26 @@
         <div class="setting-control">
             <a href="/settings/export/json" class="btn btn-primary">导出 JSON</a>
             <a href="/settings/export/csv" class="btn btn-success">导出 CSV</a>
+            <a href="/settings/backup" class="btn">下载完整备份</a>
         </div>
     </div>
-    <div class="setting-item"><div class="setting-label">导入数据</div><div class="setting-control"><button class="btn btn-warning" disabled>即将推出</button></div></div>
+    <div class="setting-item setting-item-column">
+        <div class="setting-label">导入 JSON 备份</div>
+        <form method="POST" action="/settings/import" enctype="multipart/form-data" class="import-form">
+            <input type="file" name="backup_file" accept="application/json,.json" required>
+            <select name="conflict" aria-label="冲突处理策略">
+                <option value="remap">冲突时新建副本（推荐）</option>
+                <option value="skip">冲突时跳过导入记录</option>
+                <option value="replace">冲突时覆盖同 ID 记录</option>
+            </select>
+            <button type="submit" class="btn btn-warning">校验并导入</button>
+        </form>
+        <p class="muted import-help">导入会先完整校验 JSON；校验失败不会修改现有数据。默认策略会为冲突 ID 重映射。</p>
+    </div>
     <div class="panel" style="padding: 14px;">
         <div class="stat-row"><span>总任务数</span><strong>{{ total_tasks }}</strong></div>
+        <div class="stat-row"><span>归档任务数</span><strong>{{ total_archived }}</strong></div>
+        <div class="stat-row"><span>项目数</span><strong>{{ total_projects }}</strong></div>
         <div class="stat-row"><span>数据文件大小</span><strong>{{ file_size }}</strong></div>
         <div class="stat-row"><span>最后更新</span><strong>{{ last_modified }}</strong></div>
     </div>

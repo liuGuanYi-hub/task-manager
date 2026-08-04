@@ -43,8 +43,8 @@
                         </button>
                     </form>
                     <a href="/task/{{ task.id }}/edit" class="btn btn-warning">编辑</a>
-                    <form method="POST" action="/task/{{ task.id }}/delete" onsubmit="return confirm('确定删除？')">
-                        <button type="submit" class="btn btn-danger">删除</button>
+                    <form method="POST" action="/task/{{ task.id }}/delete" onsubmit="return confirm('确定归档这个任务？')">
+                        <button type="submit" class="btn btn-danger">归档</button>
                     </form>
                 </div>
             </article>

@@ -13,6 +13,7 @@
 ✅ 显式项目和项目级任务隔离
 ✅ WeKan 式三列任务看板
 ✅ 可保存的组合筛选视图
+✅ 归档、恢复和安全备份导入
 ✅ 完整的单元测试  
 
 ## 快速开始
@@ -131,11 +132,14 @@ python main.py update-task 1 --due-date ""
 
 #### 删除任务
 ```bash
-# 删除任务（会提示确认）
+# 归档任务（会提示确认，可从 Web 的“归档”页面恢复）
 python main.py delete-task 1
 
-# 直接删除
+# 归档任务并跳过确认
 python main.py delete-task 1 -y
+
+# 明确执行永久删除（不可恢复）
+python main.py delete-task 1 -y --permanent
 ```
 
 ### 3. Web 界面
@@ -146,6 +150,8 @@ python web_app.py
 ```
 
 然后在浏览器访问：http://localhost:5000
+
+归档任务：`http://localhost:5000/archive`；保存视图：`http://localhost:5000/views`；备份和导入：`http://localhost:5000/settings`。
 
 ## 项目结构
 
@@ -176,7 +182,8 @@ task-manager/
 │   ├── test_phase_0_1.py
 │   ├── test_phase_2.py
 │   ├── test_phase_3.py
-│   └── test_phase_4.py
+│   ├── test_phase_4.py
+│   └── test_phase_5.py
 ├── requirements.txt     # 依赖包
 └── README.md           # 说明文档
 ```

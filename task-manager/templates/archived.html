@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% set active_page = "archive" %}
+{% block title %}归档任务 - 任务管理系统{% endblock %}
+{% block page_title %}归档任务{% endblock %}
+{% block page_subtitle %}被移出日常工作区的任务仍然可以恢复{% endblock %}
+{% block hero_action %}<a href="{{ url_for('index') }}" class="btn">返回任务列表</a>{% endblock %}
+{% block content %}
+<section class="panel archive-panel">
+    <div class="archive-heading">
+        <div><span class="eyebrow archive-eyebrow">ARCHIVE</span><h2>已归档任务</h2></div>
+        <span class="view-result-count">{{ tasks|length }} 个任务</span>
+    </div>
+    <div class="archive-list">
+        {% for task in tasks %}
+        <article class="archive-card">
+            <div class="archive-task-info">
+                <h3>{{ task.title }}</h3>
+                <div class="view-task-meta">
+                    <span class="chip">{{ task.status.value }}</span>
+                    <span class="chip">归档于 {{ task.updated_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    {% for tag in task.tags %}<span class="chip">#{{ tag }}</span>{% endfor %}
+                </div>
+                {% if task.description %}<p class="muted">{{ task.description }}</p>{% endif %}
+            </div>
+            <div class="task-actions">
+                <form method="POST" action="{{ url_for('archive.restore_task', task_id=task.id) }}">
+                    <button type="submit" class="btn btn-success">恢复任务</button>
+                </form>
+                <a href="{{ url_for('edit_task', task_id=task.id) }}" class="btn">查看</a>
+            </div>
+        </article>
+        {% else %}
+        <div class="empty-state"><h3>暂无归档任务</h3><p class="muted">归档后的任务会出现在这里，恢复后重新回到日常列表。</p></div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

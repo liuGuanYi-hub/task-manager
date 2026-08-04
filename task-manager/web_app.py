@@ -9,6 +9,7 @@ from routes.calendar_routes import calendar_bp
 from routes.projects_routes import projects_bp
 from routes.board_routes import board_bp
 from routes.views_routes import views_bp
+from routes.archive_routes import archive_bp
 from routes.settings_routes import settings_bp
 
 app = Flask(__name__)
@@ -22,6 +23,7 @@ app.register_blueprint(calendar_bp)
 app.register_blueprint(projects_bp)
 app.register_blueprint(board_bp)
 app.register_blueprint(views_bp)
+app.register_blueprint(archive_bp)
 app.register_blueprint(settings_bp)
 
 
@@ -157,8 +159,9 @@ def toggle_task(task_id):
 
 @app.route("/task/<int:task_id>/delete", methods=["POST"])
 def delete_task(task_id):
-    """删除任务"""
-    storage.delete(task_id)
+    """归档任务，保留数据并从日常列表隐藏。"""
+    if not storage.archive(task_id):
+        return "任务不存在", 404
     return redirect(url_for("index"))
 
 
