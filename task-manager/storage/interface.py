@@ -4,7 +4,7 @@ CLI、Flask 页面和 REST API 只依赖这组方法，不直接依赖具体的�
 """
 
 from datetime import datetime
-from typing import Any, List, Optional, Protocol, Sequence
+from typing import Any, List, Optional, Protocol, Sequence, Tuple
 
 from models.project import Project
 from models.saved_view import SavedView
@@ -38,6 +38,22 @@ class StorageProtocol(Protocol):
         due_date_from: Optional[datetime] = None,
         due_date_to: Optional[datetime] = None,
     ) -> List[Task]: ...
+
+    def query_page(
+        self,
+        offset: int,
+        limit: int,
+        status: Optional[str] = None,
+        priority: Optional[str] = None,
+        tag: Optional[str] = None,
+        include_archived: bool = False,
+        sort_by: str = "created_at",
+        reverse: bool = False,
+        project_id: Any = ...,
+        statuses: Optional[Sequence[str]] = None,
+        due_date_from: Optional[datetime] = None,
+        due_date_to: Optional[datetime] = None,
+    ) -> Tuple[List[Task], int]: ...
 
     def archive(self, task_id: int) -> bool: ...
 

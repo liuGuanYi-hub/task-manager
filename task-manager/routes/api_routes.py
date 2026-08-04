@@ -134,10 +134,16 @@ def _task_data(task: Task, storage) -> dict:
 
 
 def _project_data(project: Project, storage) -> dict:
-    tasks = storage.get_all(project_id=project.id)
+    if hasattr(storage, "get_project_summary"):
+        summary = storage.get_project_summary(project.id)
+    else:
+        tasks = storage.get_all(project_id=project.id)
+        summary = {
+            "total_tasks": len(tasks),
+            "completed_tasks": sum(1 for task in tasks if task.status == Status.DONE),
+        }
     result = project.to_dict()
-    result["total_tasks"] = len(tasks)
-    result["completed_tasks"] = sum(1 for task in tasks if task.status == Status.DONE)
+    result.update(summary)
     return result
 
 
@@ -155,18 +161,22 @@ def _pagination_args():
     return page, page_size
 
 
-def _paginate(items, page: int, page_size: int):
-    total = len(items)
-    start = (page - 1) * page_size
-    page_items = items[start : start + page_size]
-    return page_items, {
+def _pagination_meta(page: int, page_size: int, total: int, returned: int) -> dict:
+    return {
         "page": page,
         "page_size": page_size,
         "pages": math.ceil(total / page_size) if total else 0,
         "total": total,
         "count": total,
-        "returned": len(page_items),
+        "returned": returned,
     }
+
+
+def _paginate(items, page: int, page_size: int):
+    total = len(items)
+    start = (page - 1) * page_size
+    page_items = items[start : start + page_size]
+    return page_items, _pagination_meta(page, page_size, total, len(page_items))
 
 
 @api_bp.errorhandler(ApiInputError)
@@ -210,19 +220,28 @@ def list_tasks_api():
     if priority and priority not in {item.value for item in Priority}:
         return _error("priority 不是有效值")
 
+    query_options = {
+        "priority": priority,
+        "tag": request.args.get("tag") or None,
+        "include_archived": request.args.get("include_archived", "").lower() in {"1", "true", "yes"},
+        "sort_by": request.args.get("sort_by", "created_at"),
+        "reverse": request.args.get("reverse", "").lower() in {"1", "true", "yes"},
+        "project_id": project_id,
+        "statuses": status_values,
+    }
     try:
-        tasks = storage.query(
-            priority=priority,
-            tag=request.args.get("tag") or None,
-            include_archived=request.args.get("include_archived", "").lower() in {"1", "true", "yes"},
-            sort_by=request.args.get("sort_by", "created_at"),
-            reverse=request.args.get("reverse", "").lower() in {"1", "true", "yes"},
-            project_id=project_id,
-            statuses=status_values,
-        )
+        if hasattr(storage, "query_page"):
+            page_tasks, total = storage.query_page(
+                offset=(page - 1) * page_size,
+                limit=page_size,
+                **query_options,
+            )
+            meta = _pagination_meta(page, page_size, total, len(page_tasks))
+        else:
+            tasks = storage.query(**query_options)
+            page_tasks, meta = _paginate(tasks, page, page_size)
     except ValueError as exc:
         return _error(str(exc))
-    page_tasks, meta = _paginate(tasks, page, page_size)
     return jsonify({"data": [_task_data(task, storage) for task in page_tasks], "meta": meta})
 
 
@@ -273,8 +292,15 @@ def archive_task_api(task_id: int):
 def list_projects_api():
     storage = JSONStorage()
     page, page_size = _pagination_args()
-    projects = storage.get_projects()
-    page_projects, meta = _paginate(projects, page, page_size)
+    if hasattr(storage, "get_projects_page"):
+        page_projects, total = storage.get_projects_page(
+            offset=(page - 1) * page_size,
+            limit=page_size,
+        )
+        meta = _pagination_meta(page, page_size, total, len(page_projects))
+    else:
+        projects = storage.get_projects()
+        page_projects, meta = _paginate(projects, page, page_size)
     return jsonify({"data": [_project_data(project, storage) for project in page_projects], "meta": meta})
 
 
@@ -300,9 +326,19 @@ def get_project_api(project_id: int):
     if project is None:
         return _error("项目不存在", 404, "not_found")
     include_archived = request.args.get("include_archived", "").lower() in {"1", "true", "yes"}
-    tasks = storage.get_all(include_archived=include_archived, project_id=project_id)
     page, page_size = _pagination_args()
-    page_tasks, meta = _paginate(tasks, page, page_size)
+    if hasattr(storage, "query_page"):
+        page_tasks, total = storage.query_page(
+            offset=(page - 1) * page_size,
+            limit=page_size,
+            include_archived=include_archived,
+            project_id=project_id,
+            sort_by="id",
+        )
+        meta = _pagination_meta(page, page_size, total, len(page_tasks))
+    else:
+        tasks = storage.get_all(include_archived=include_archived, project_id=project_id)
+        page_tasks, meta = _paginate(tasks, page, page_size)
     return jsonify(
         {
             "data": {

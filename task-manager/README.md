@@ -213,6 +213,8 @@ GET /api/v1/projects?page=1&page_size=10
 
 响应的 `meta` 包含 `page`、`page_size`、`pages`、`total`、`count` 和 `returned`，其中 `returned` 是当前页实际返回数量。
 
+使用 SQLite 后，任务集合、项目集合和项目详情任务会直接执行数据库 `COUNT(*)`、过滤、排序和 `LIMIT/OFFSET`；JSON 后端继续使用原有内存兼容路径。旧版 SQLite 文件中的 `tags_json` 会在启动时回填到标签索引表，不影响按标签查询。
+
 ## 项目结构
 
 ```

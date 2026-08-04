@@ -7,12 +7,13 @@ SQLiteStorage 保持 JSONStorage 的业务方法和数据模型不变，只替�
 import json
 import sqlite3
 from pathlib import Path
-from typing import Any, Tuple
+from datetime import datetime
+from typing import Any, List, Optional, Sequence, Tuple
 
 from models.project import Project
 from models.saved_view import SavedView
-from models.task import Task
-from storage.json_storage import JSONStorage
+from models.task import Status, Task
+from storage.json_storage import ANY_PROJECT, JSONStorage
 
 
 class SQLiteStorage(JSONStorage):
@@ -31,6 +32,7 @@ class SQLiteStorage(JSONStorage):
         self.next_project_id = 1
         self.next_view_id = 1
         self._load()
+        self._ensure_task_tags()
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(str(self.db_path))
@@ -81,10 +83,17 @@ class SQLiteStorage(JSONStorage):
                     updated_at TEXT NOT NULL
                 );
 
+                CREATE TABLE IF NOT EXISTS task_tags (
+                    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+                    tag TEXT NOT NULL,
+                    PRIMARY KEY(task_id, tag)
+                );
+
                 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
                 CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id);
                 CREATE INDEX IF NOT EXISTS idx_tasks_archived ON tasks(archived);
                 CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date);
+                CREATE INDEX IF NOT EXISTS idx_task_tags_tag_task ON task_tags(tag, task_id);
                 """
             )
             connection.commit()
@@ -156,10 +165,36 @@ class SQLiteStorage(JSONStorage):
         self.next_project_id = max([project.id or 0 for project in self.projects] + [0]) + 1
         self.next_view_id = max([view.id or 0 for view in self.saved_views] + [0]) + 1
 
+    def _ensure_task_tags(self) -> None:
+        """为旧版只有 tags_json 的 SQLite 文件补建可查询的标签索引。"""
+        tag_rows = [
+            (task.id, tag)
+            for task in self.tasks
+            if task.id is not None
+            for tag in task.tags
+            if tag
+        ]
+        if not tag_rows:
+            return
+
+        connection = self._connect()
+        try:
+            indexed_count = connection.execute("SELECT COUNT(*) FROM task_tags").fetchone()[0]
+            if indexed_count:
+                return
+            with connection:
+                connection.executemany(
+                    "INSERT INTO task_tags(task_id, tag) VALUES (?, ?)",
+                    tag_rows,
+                )
+        finally:
+            connection.close()
+
     def _save(self) -> None:
         connection = self._connect()
         try:
             with connection:
+                connection.execute("DELETE FROM task_tags")
                 connection.execute("DELETE FROM tasks")
                 connection.execute("DELETE FROM saved_views")
                 connection.execute("DELETE FROM projects")
@@ -206,6 +241,16 @@ class SQLiteStorage(JSONStorage):
                     ],
                 )
                 connection.executemany(
+                    "INSERT INTO task_tags(task_id, tag) VALUES (?, ?)",
+                    [
+                        (task.id, tag)
+                        for task in self.tasks
+                        if task.id is not None
+                        for tag in task.tags
+                        if tag
+                    ],
+                )
+                connection.executemany(
                     """
                     INSERT INTO saved_views(id, name, filters_json, created_at, updated_at)
                     VALUES (?, ?, ?, ?, ?)
@@ -221,6 +266,165 @@ class SQLiteStorage(JSONStorage):
                         for view in self.saved_views
                     ],
                 )
+        finally:
+            connection.close()
+
+    @staticmethod
+    def _task_sort_sql(sort_by: str, reverse: bool) -> str:
+        sort_columns = {
+            "id": "tasks.id",
+            "title": "tasks.title",
+            "created_at": "tasks.created_at",
+            "due_date": "tasks.due_date",
+            "updated_at": "tasks.updated_at",
+            "completed_at": "tasks.completed_at",
+        }
+        if sort_by not in sort_columns:
+            raise ValueError(f"不支持的排序字段：{sort_by}")
+
+        column = sort_columns[sort_by]
+        if reverse:
+            return (
+                f"CASE WHEN {column} IS NULL THEN 0 ELSE 1 END ASC, "
+                f"{column} DESC, tasks.id DESC"
+            )
+        return (
+            f"CASE WHEN {column} IS NULL THEN 1 ELSE 0 END ASC, "
+            f"{column} ASC, tasks.id ASC"
+        )
+
+    @staticmethod
+    def _task_filter_sql(
+        status: Optional[str] = None,
+        priority: Optional[str] = None,
+        tag: Optional[str] = None,
+        include_archived: bool = False,
+        project_id=ANY_PROJECT,
+        statuses: Optional[Sequence[str]] = None,
+        due_date_from: Optional[datetime] = None,
+        due_date_to: Optional[datetime] = None,
+    ) -> Tuple[str, List[Any]]:
+        conditions = []
+        params: List[Any] = []
+        if not include_archived:
+            conditions.append("tasks.archived = 0")
+
+        if project_id is not ANY_PROJECT:
+            if project_id is None:
+                conditions.append("tasks.project_id IS NULL")
+            else:
+                conditions.append("tasks.project_id = ?")
+                params.append(project_id)
+
+        status_values = set(statuses or [])
+        if status:
+            status_values.add(status)
+        if status_values:
+            ordered_statuses = sorted(status_values)
+            placeholders = ", ".join("?" for _ in ordered_statuses)
+            conditions.append(f"tasks.status IN ({placeholders})")
+            params.extend(ordered_statuses)
+
+        if priority:
+            conditions.append("tasks.priority = ?")
+            params.append(priority)
+        if tag:
+            conditions.append(
+                "EXISTS (SELECT 1 FROM task_tags "
+                "WHERE task_tags.task_id = tasks.id AND task_tags.tag = ?)"
+            )
+            params.append(tag)
+        if due_date_from is not None:
+            conditions.append("tasks.due_date IS NOT NULL AND tasks.due_date >= ?")
+            params.append(due_date_from.isoformat())
+        if due_date_to is not None:
+            conditions.append("tasks.due_date IS NOT NULL AND tasks.due_date <= ?")
+            params.append(due_date_to.isoformat())
+
+        return (" WHERE " + " AND ".join(conditions)) if conditions else "", params
+
+    def query_page(
+        self,
+        offset: int,
+        limit: int,
+        status: Optional[str] = None,
+        priority: Optional[str] = None,
+        tag: Optional[str] = None,
+        include_archived: bool = False,
+        sort_by: str = "created_at",
+        reverse: bool = False,
+        project_id=ANY_PROJECT,
+        statuses: Optional[Sequence[str]] = None,
+        due_date_from: Optional[datetime] = None,
+        due_date_to: Optional[datetime] = None,
+    ) -> Tuple[List[Task], int]:
+        """在 SQLite 中完成过滤、计数、排序和分页，避免先加载全集。"""
+        if offset < 0:
+            raise ValueError("offset 不能小于 0")
+        if limit < 1:
+            raise ValueError("limit 必须大于 0")
+
+        where_sql, params = self._task_filter_sql(
+            status=status,
+            priority=priority,
+            tag=tag,
+            include_archived=include_archived,
+            project_id=project_id,
+            statuses=statuses,
+            due_date_from=due_date_from,
+            due_date_to=due_date_to,
+        )
+        order_sql = self._task_sort_sql(sort_by, reverse)
+        connection = self._connect()
+        try:
+            total = connection.execute(
+                f"SELECT COUNT(*) FROM tasks{where_sql}",
+                params,
+            ).fetchone()[0]
+            rows = connection.execute(
+                f"SELECT tasks.* FROM tasks{where_sql} "
+                f"ORDER BY {order_sql} LIMIT ? OFFSET ?",
+                [*params, limit, offset],
+            ).fetchall()
+            return [self._task_from_row(row) for row in rows], total
+        finally:
+            connection.close()
+
+    def get_projects_page(self, offset: int, limit: int) -> Tuple[List[Project], int]:
+        """在 SQLite 中分页读取项目。"""
+        if offset < 0:
+            raise ValueError("offset 不能小于 0")
+        if limit < 1:
+            raise ValueError("limit 必须大于 0")
+        connection = self._connect()
+        try:
+            total = connection.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
+            rows = connection.execute(
+                "SELECT * FROM projects ORDER BY id ASC LIMIT ? OFFSET ?",
+                (limit, offset),
+            ).fetchall()
+            return [self._project_from_row(row) for row in rows], total
+        finally:
+            connection.close()
+
+    def get_project_summary(self, project_id: int) -> dict:
+        """用聚合查询返回项目任务统计，避免加载项目全部任务。"""
+        connection = self._connect()
+        try:
+            row = connection.execute(
+                """
+                SELECT COUNT(*) AS total_tasks,
+                       COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0)
+                           AS completed_tasks
+                FROM tasks
+                WHERE project_id = ? AND archived = 0
+                """,
+                (Status.DONE.value, project_id),
+            ).fetchone()
+            return {
+                "total_tasks": row["total_tasks"],
+                "completed_tasks": row["completed_tasks"],
+            }
         finally:
             connection.close()
 
