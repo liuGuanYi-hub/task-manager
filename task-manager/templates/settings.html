@@ -9,17 +9,30 @@
 <section class="settings-section">
     <h2>外观设置</h2>
     <div class="setting-item">
-        <div class="setting-label">主题颜色</div>
+        <div>
+            <div class="setting-label">主题颜色</div>
+            <p class="muted setting-description">选择界面的强调色，设置会保存在当前浏览器。</p>
+        </div>
         <div class="setting-control">
-            <div class="theme-preview">
-                <div class="theme-option active" style="background: linear-gradient(135deg, #4f7cff, #8b5cf6);"></div>
-                <div class="theme-option" style="background: linear-gradient(135deg, #f093fb, #f5576c);"></div>
-                <div class="theme-option" style="background: linear-gradient(135deg, #4facfe, #00f2fe);"></div>
-                <div class="theme-option" style="background: linear-gradient(135deg, #43e97b, #38f9d7);"></div>
+            <div class="theme-preview" role="group" aria-label="主题强调色">
+                <button type="button" class="theme-option theme-option-default" data-accent="default" aria-label="蓝紫主题" title="蓝紫主题"></button>
+                <button type="button" class="theme-option theme-option-rose" data-accent="rose" aria-label="玫红主题" title="玫红主题"></button>
+                <button type="button" class="theme-option theme-option-ocean" data-accent="ocean" aria-label="海洋主题" title="海洋主题"></button>
+                <button type="button" class="theme-option theme-option-mint" data-accent="mint" aria-label="薄荷主题" title="薄荷主题"></button>
             </div>
         </div>
     </div>
-    <div class="setting-item"><div class="setting-label">深色模式</div><div class="setting-control"><button class="btn" disabled>即将推出</button></div></div>
+    <div class="setting-item setting-item-column">
+        <div>
+            <div class="setting-label">主题模式</div>
+            <p class="muted setting-description">跟随系统、浅色和深色模式可以随时切换。</p>
+        </div>
+        <div class="theme-mode-options" role="group" aria-label="主题模式">
+            <button type="button" class="theme-mode-btn" data-theme-mode="system">跟随系统</button>
+            <button type="button" class="theme-mode-btn" data-theme-mode="light">浅色</button>
+            <button type="button" class="theme-mode-btn" data-theme-mode="dark">深色</button>
+        </div>
+    </div>
 </section>
 <section class="settings-section">
     <h2>数据管理</h2>

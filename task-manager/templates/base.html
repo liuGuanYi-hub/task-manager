@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}任务管理系统{% endblock %}</title>
+    <script src="{{ url_for('static', filename='theme.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
     {% block head %}{% endblock %}
 </head>
@@ -21,7 +22,16 @@
                     <h1>{% block page_title %}任务管理系统{% endblock %}</h1>
                     <p>{% block page_subtitle %}高效管理你的日常任务{% endblock %}</p>
                 </div>
-                {% block hero_action %}{% endblock %}
+                <div class="hero-actions">
+                    {% block hero_action %}{% endblock %}
+                    <button type="button" class="theme-toggle" id="theme-toggle" aria-label="切换主题模式">
+                        <span class="theme-toggle-icon" aria-hidden="true">◐</span>
+                        <span class="theme-toggle-copy">
+                            <span>主题模式</span>
+                            <strong id="theme-status">跟随系统</strong>
+                        </span>
+                    </button>
+                </div>
             </header>
             <nav class="nav-pills" aria-label="主导航">
                 <a href="/" class="{{ 'active' if active_page == 'tasks' else '' }}">任务列表</a>
