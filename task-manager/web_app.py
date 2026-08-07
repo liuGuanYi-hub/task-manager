@@ -12,6 +12,7 @@ from routes.views_routes import views_bp
 from routes.archive_routes import archive_bp
 from routes.settings_routes import settings_bp
 from routes.api_routes import api_bp
+from routes.today_routes import today_bp
 
 app = Flask(__name__)
 storage = JSONStorage()
@@ -27,6 +28,7 @@ app.register_blueprint(views_bp)
 app.register_blueprint(archive_bp)
 app.register_blueprint(settings_bp)
 app.register_blueprint(api_bp)
+app.register_blueprint(today_bp)
 
 
 @app.route("/")
