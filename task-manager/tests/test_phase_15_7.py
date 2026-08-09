@@ -48,12 +48,12 @@ def _browser_backup_payload():
     }
 
 
-def _post_import(client, payload, mode):
+def _post_import(client, payload, mode, conflict="remap"):
     return client.post(
         "/settings/import",
         data={
             "mode": mode,
-            "conflict": "remap",
+            "conflict": conflict,
             "backup_file": (
                 io.BytesIO(json.dumps(payload, ensure_ascii=False).encode("utf-8")),
                 "phase-15-7-backup.json",
@@ -86,3 +86,20 @@ def test_isolated_import_preview_then_confirm_writes_only_after_confirmation(tmp
     assert task.title == "phase-15-7-restored-task"
     assert task.project_id == reloaded.get_projects()[0].id
     assert reloaded.get_saved_views()[0].filters == {"project_id": task.project_id}
+
+
+def test_import_preview_keeps_selected_conflict_strategy(tmp_path, monkeypatch):
+    storage = JSONStorage(tmp_path / "strategy.json")
+    monkeypatch.setattr("routes.settings_routes.JSONStorage", lambda: storage)
+
+    response = _post_import(
+        app.test_client(),
+        _browser_backup_payload(),
+        "preview",
+        conflict="skip",
+    )
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert 'option value="skip" selected' in body
+    assert 'option value="remap" selected' not in body

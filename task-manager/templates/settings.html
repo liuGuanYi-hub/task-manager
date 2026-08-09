@@ -61,9 +61,9 @@
         <form method="POST" action="/settings/import" enctype="multipart/form-data" class="import-form" data-import-form>
             <input type="file" name="backup_file" accept="application/json,.json" required>
             <select name="conflict" aria-label="冲突处理策略" data-conflict-select>
-                <option value="remap">冲突时新建副本（推荐）</option>
-                <option value="skip">冲突时跳过导入记录</option>
-                <option value="replace">冲突时覆盖同 ID 记录</option>
+                <option value="remap" {% if not import_preview or import_preview.conflict == "remap" %}selected{% endif %}>冲突时新建副本（推荐）</option>
+                <option value="skip" {% if import_preview and import_preview.conflict == "skip" %}selected{% endif %}>冲突时跳过导入记录</option>
+                <option value="replace" {% if import_preview and import_preview.conflict == "replace" %}selected{% endif %}>冲突时覆盖同 ID 记录</option>
             </select>
             <div class="import-actions"><button type="submit" name="mode" value="preview" class="btn">先预览</button><button type="submit" name="mode" value="import" class="btn btn-warning">确认写入</button></div>
         </form>
