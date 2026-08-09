@@ -16,10 +16,11 @@
         <a class="btn" href="{{ url_for('calendar.calendar_week_view') }}">本周</a>
     </div>
 </div>
-<section class="calendar-week-content" aria-label="一周任务安排">
+<section class="calendar-week-content" data-calendar-root aria-label="一周任务安排">
+    <p class="calendar-drag-hint" data-calendar-feedback role="status" aria-live="polite">拖动任务到其他日期即可改期，原有截止时间会保留。</p>
     <div class="calendar-week-grid">
         {% for day in week_days %}
-        <article class="calendar-week-day {{ 'is-today' if day.is_today else '' }}">
+        <article class="calendar-week-day {{ 'is-today' if day.is_today else '' }}" data-calendar-drop-date="{{ day.date }}">
             <header class="calendar-week-day-header">
                 <div><span>{{ day.label }}</span><strong>{{ day.title }}</strong></div>
                 <em>{{ day.tasks|length }}</em>
@@ -29,8 +30,11 @@
                 <button
                     type="button"
                     class="calendar-week-task {{ task.status_class }}"
+                    draggable="true"
                     data-task-detail
                     data-task-id="{{ task.id }}"
+                    data-calendar-task-id="{{ task.id }}"
+                    data-calendar-reschedule-url="{{ task.reschedule_url }}"
                     data-title="{{ task.title }}"
                     data-priority="{{ task.priority }}优先级"
                     data-priority-value="{{ task.priority_value }}"
@@ -62,4 +66,4 @@
 </section>
 {% include "_task_detail_drawer.html" %}
 {% endblock %}
-{% block scripts %}<script src="{{ url_for('static', filename='today.js') }}"></script>{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='today.js') }}"></script><script src="{{ url_for('static', filename='calendar.js') }}"></script>{% endblock %}

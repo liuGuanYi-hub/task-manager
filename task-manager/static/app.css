@@ -937,6 +937,28 @@ body.search-open {
     padding: 18px;
 }
 
+.calendar-drag-hint {
+    margin: 0 0 12px;
+    color: var(--muted);
+    font-size: 0.74rem;
+}
+
+.calendar-drag-hint.is-error {
+    color: var(--red);
+}
+
+.day-cell.is-drag-over,
+.calendar-week-day.is-drag-over {
+    border-color: rgba(79, 124, 255, 0.78);
+    background: rgba(79, 124, 255, 0.14);
+    box-shadow: 0 0 0 4px rgba(79, 124, 255, 0.10);
+}
+
+.calendar-week-task.is-dragging,
+.task-item-modal.is-dragging {
+    opacity: 0.45;
+}
+
 .calendar-week-content {
     padding: 18px;
     overflow-x: auto;

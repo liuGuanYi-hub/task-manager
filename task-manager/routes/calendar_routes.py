@@ -1,5 +1,5 @@
 """日历视图路由"""
-from flask import Blueprint, render_template, request, url_for
+from flask import Blueprint, jsonify, redirect, render_template, request, url_for
 from storage.factory import create_storage as JSONStorage
 from models.task import Task, parse_datetime
 from datetime import date, datetime, timedelta
@@ -38,6 +38,7 @@ def _week_task_payload(task: Task, project_names: dict[int, str], date_value: da
         "updated": task.updated_at.strftime("%Y-%m-%d %H:%M"),
         "edit_url": url_for("edit_task", task_id=task.id),
         "update_url": url_for("update_task", task_id=task.id, next="/calendar/week"),
+        "reschedule_url": url_for("calendar.reschedule_task", task_id=task.id),
         "context": f"{date_value.strftime('%Y年%m月%d日')} 周视图",
     }
 
@@ -114,6 +115,7 @@ def calendar_view():
                 "updated": t.updated_at.strftime("%Y-%m-%d %H:%M"),
                 "edit_url": url_for("edit_task", task_id=t.id),
                 "update_url": url_for("update_task", task_id=t.id, next="/calendar/"),
+                "reschedule_url": url_for("calendar.reschedule_task", task_id=t.id),
                 "context": f"{date_value.strftime('%Y年%m月%d日')} 日历",
             }
             for t in day_tasks
@@ -127,6 +129,54 @@ def calendar_view():
         tasks_json=tasks_json,
         projects=projects,
     )
+
+
+def _calendar_wants_json() -> bool:
+    """识别拖拽改期请求是否需要机器可读响应。"""
+    return request.is_json or "application/json" in request.headers.get("Accept", "")
+
+
+@calendar_bp.route("/task/<int:task_id>/reschedule", methods=["POST"])
+def reschedule_task(task_id: int):
+    """只修改任务截止日期的轻量改期接口，保留原有截止时间。"""
+    storage = JSONStorage()
+    task = storage.get_by_id(task_id)
+    if task is None or task.archived:
+        if _calendar_wants_json():
+            return jsonify({"error": {"code": "task_not_found", "message": "任务不存在或已归档"}}), 404
+        return "任务不存在或已归档", 404
+
+    data = request.get_json(silent=True) if request.is_json else request.form
+    data = data if data is not None and hasattr(data, "get") else {}
+    target_raw = str(data.get("date", "")).strip()
+    try:
+        target_date = date.fromisoformat(target_raw)
+    except ValueError:
+        if _calendar_wants_json():
+            return jsonify({"error": {"code": "invalid_date", "message": "目标日期格式无效"}}), 400
+        return "目标日期格式无效", 400
+
+    original_time = task.due_date.time() if task.due_date else datetime.min.time()
+    task.due_date = datetime.combine(target_date, original_time)
+    if not storage.update(task):
+        if _calendar_wants_json():
+            return jsonify({"error": {"code": "update_failed", "message": "任务改期失败"}}), 500
+        return "任务改期失败", 500
+
+    if _calendar_wants_json():
+        return jsonify(
+            {
+                "data": {
+                    "id": task.id,
+                    "due_date": task.due_date.isoformat(),
+                }
+            }
+        )
+
+    next_url = data.get("next") or request.args.get("next")
+    if next_url and next_url.startswith("/") and not next_url.startswith("//"):
+        return redirect(next_url)
+    return redirect(url_for("calendar.calendar_view"))
 
 
 @calendar_bp.route("/week")

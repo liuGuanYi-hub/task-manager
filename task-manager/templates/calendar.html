@@ -15,7 +15,8 @@
         <a class="btn" href="{{ url_for('calendar.calendar_week_view') }}">周视图</a>
     </div>
 </div>
-<section class="calendar-content">
+<section class="calendar-content" data-calendar-root>
+    <p class="calendar-drag-hint" data-calendar-feedback role="status" aria-live="polite">拖动任务到其他日期即可改期，原有截止时间会保留。</p>
     <div class="calendar-grid">
         {% for label in ['周一','周二','周三','周四','周五','周六','周日'] %}
         <div class="weekday-header">{{ label }}</div>
@@ -24,7 +25,7 @@
             {% if day.is_empty %}
             <div class="day-cell empty-day"></div>
             {% else %}
-            <div class="day-cell {{ 'today' if day.is_today else '' }} {{ 'has-tasks' if day.task_count > 0 else '' }}" onclick="showDayTasks('{{ day.date }}')">
+            <div class="day-cell {{ 'today' if day.is_today else '' }} {{ 'has-tasks' if day.task_count > 0 else '' }}" data-calendar-drop-date="{{ day.date }}" onclick="showDayTasks('{{ day.date }}')">
                 <div class="day-number"><span class="date">{{ day.day }}</span></div>
                 {% if day.task_count > 0 %}
                 <div class="task-dots">{% for priority in day.priorities %}<span class="task-dot {{ priority }}"></span>{% endfor %}</div>
@@ -93,7 +94,7 @@ function showDayTasks(date) {
         taskList.innerHTML = '<p class="muted" style="text-align:center;padding:40px;">暂无任务</p>';
     } else {
         taskList.innerHTML = tasks.map(task => `
-            <div class="task-item-modal ${escapeHtml(task.status_class)}">
+            <div class="task-item-modal ${escapeHtml(task.status_class)}" draggable="true" data-calendar-task-id="${escapeHtml(task.id)}" data-calendar-reschedule-url="${escapeHtml(task.reschedule_url)}">
                 <strong>${escapeHtml(task.title)}</strong>
                 <p class="muted" style="margin:6px 0;">${escapeHtml(task.description)}</p>
                 <div class="task-meta"><span class="chip">${escapeHtml(task.priority_icon)} ${escapeHtml(task.priority)}</span><span class="chip">${escapeHtml(task.status_icon)} ${escapeHtml(task.status)}</span></div>
@@ -111,4 +112,5 @@ document.getElementById('dayModal').addEventListener('click', function(e) {
 });
 </script>
 <script src="{{ url_for('static', filename='today.js') }}"></script>
+<script src="{{ url_for('static', filename='calendar.js') }}"></script>
 {% endblock %}
