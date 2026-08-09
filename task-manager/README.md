@@ -4,6 +4,8 @@
 
 ## 特性
 
+当前版本重点能力：Today 工作台、统一任务详情抽屉、WeKan 式看板状态持久化、保存视图、提醒中心、归档恢复、JSON/SQLite 双存储、REST API v1 认证分页、深色主题、移动端导航、可访问性基础和 GitHub Actions 质量门禁。
+
 ✅ 任务 CRUD 操作  
 ✅ 任务搜索和过滤  
 ✅ 统计报表和周报  
@@ -196,7 +198,7 @@ $env:TASK_MANAGER_API_TOKEN = "在安全配置中设置的值"
 python web_app.py
 ```
 
-除 `/api/v1/health` 外，请求必须携带：
+除 `/api/v1` 和 `/api/v1/health` 外，请求必须携带：
 
 ```text
 Authorization: Bearer <已配置的 token>
@@ -216,6 +218,20 @@ GET /api/v1/projects?page=1&page_size=10
 响应的 `meta` 包含 `page`、`page_size`、`pages`、`total`、`count` 和 `returned`，其中 `returned` 是当前页实际返回数量。
 
 使用 SQLite 后，任务集合、项目集合和项目详情任务会直接执行数据库 `COUNT(*)`、过滤、排序和 `LIMIT/OFFSET`；JSON 后端继续使用原有内存兼容路径。旧版 SQLite 文件中的 `tags_json` 会在启动时回填到标签索引表，不影响按标签查询。
+
+### 5. 发布前检查
+
+从仓库根目录运行：
+
+```bash
+python task-manager/scripts/security_scan.py --root .
+cd task-manager
+python -m pytest tests/ -q
+python -m compileall -q models storage commands routes utils scripts web_app.py main.py
+git diff --check
+```
+
+不要把真实 token、`.env`、任务 JSON 或 SQLite 文件提交到 Git。GitHub Actions 会在 push 和 pull request 时执行测试、编译、JavaScript 语法、空白和敏感信息扫描。
 
 ## 项目结构
 
@@ -244,8 +260,13 @@ task-manager/
 │   └── storage.py
 ├── routes/              # Flask 页面和 API 路由
 │   └── api_routes.py
-├── utils/               # 工具函数
-│   └── helpers.py
+├── utils/               # 工具函数和安全脱敏
+│   ├── helpers.py
+│   └── security.py
+├── scripts/             # 发布前维护脚本
+│   └── security_scan.py
+├── docs/                # 接口契约
+│   └── API.md
 ├── tests/               # 测试文件
 │   ├── test_task.py
 │   ├── test_storage.py

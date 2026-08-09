@@ -1,6 +1,46 @@
-# 🚀 快速部署指南
+# 🚀 当前部署与发布指南
 
-## 方式一：使用自动部署脚本（推荐）
+> 当前仓库使用 `master` 分支。本文优先介绍可审计的手动发布流程；旧版一键脚本保留在仓库中，但不建议用于当前工作区，因为它会执行宽范围 `git add .`、尝试切换分支并沿用早期发布假设。
+
+## 当前推荐流程
+
+从仓库根目录执行：
+
+```powershell
+# 1. 查看工作区，确认没有把无关删除或敏感文件纳入本轮
+git status --short
+
+# 2. 发布前验证
+python task-manager/scripts/security_scan.py --root .
+Set-Location task-manager
+python -m pytest tests/ -q
+python -m compileall -q models storage commands routes utils scripts web_app.py main.py
+git diff --check
+Set-Location ..
+
+# 3. 只暂存本轮明确修改的路径
+git add <本轮明确修改的文件>
+git diff --cached --check
+
+# 4. 使用中文提交信息并推送当前分支
+git commit -m "完善：说明本轮发布内容"
+git push origin master
+```
+
+GitHub Actions 会在 push 和 pull request 时重复执行核心质量门禁。推送完成后，在仓库 Actions 页面确认工作流通过，再进行正式演示或部署。
+
+## 配置 API Token
+
+不要把 token 放进 Git remote URL、脚本、日志或 Markdown。部署时通过系统服务、CI secret 或部署平台环境变量注入：
+
+```powershell
+$env:TASK_MANAGER_API_TOKEN = "YOUR_API_TOKEN"
+python task-manager/web_app.py
+```
+
+配置 token 后，只有 `/api/v1` 和 `/api/v1/health` 公开；其余 API 请求使用 `Authorization: Bearer YOUR_API_TOKEN`。
+
+## 旧版自动部署脚本（不建议用于当前工作区）
 
 ### Windows 用户
 
@@ -39,19 +79,19 @@ cd task-manager
 git init
 
 # 3. 添加所有文件
-git add .
+git add <本轮明确修改的文件>
 
 # 4. 提交
 git commit -m "Initial commit: 个人任务管理系统 v1.0"
 
 # 5. 设置分支
-git branch -M main
+git branch -M master
 
 # 6. 关联远程仓库
 git remote add origin https://github.com/liuGuanYi-hub/task-manager.git
 
 # 7. 推送
-git push -u origin main
+git push -u origin master
 ```
 
 ---
@@ -68,8 +108,10 @@ git push -u origin main
 
 2. **使用 Token 推送**
    ```bash
-   git push https://<your-username>:<your-token>@github.com/liuGuanYi-hub/task-manager.git
+   git push origin master
    ```
+
+   推荐使用 Git Credential Manager 或 SSH 保存认证，不要把 token 拼接进 URL。
 
 ### 使用 SSH 密钥
 
