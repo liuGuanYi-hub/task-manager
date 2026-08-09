@@ -47,6 +47,7 @@ test_tasks.json
 
 # Browser verification artifacts
 output/playwright/
+output/release-smoke/
 
 # Environment variables
 .env

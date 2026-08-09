@@ -18,6 +18,11 @@ python -m compileall -q models storage commands routes utils scripts web_app.py 
 git diff --check
 Set-Location ..
 
+# 2.1 一键隔离发布 smoke（需要 python、npx）
+Set-Location task-manager
+python scripts/release_smoke.py
+Set-Location ..
+
 # 3. 只暂存本轮明确修改的路径
 git add <本轮明确修改的文件>
 git diff --cached --check

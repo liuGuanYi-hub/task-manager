@@ -231,6 +231,12 @@ python -m compileall -q models storage commands routes utils scripts web_app.py 
 git diff --check
 ```
 
+Windows 下还可以运行隔离发布 smoke；脚本会在 `output/release-smoke/` 创建独立 SQLite 和浏览器证据，不使用默认任务文件：
+
+```powershell
+python task-manager/scripts/release_smoke.py
+```
+
 不要把真实 token、`.env`、任务 JSON 或 SQLite 文件提交到 Git。GitHub Actions 会在 push 和 pull request 时执行测试、编译、JavaScript 语法、空白和敏感信息扫描。
 
 ## 项目结构
