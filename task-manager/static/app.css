@@ -727,6 +727,80 @@ body.search-open {
     gap: 14px;
 }
 
+.bulk-feedback,
+.bulk-toolbar {
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface-soft);
+}
+
+.bulk-feedback {
+    color: var(--green);
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.bulk-toolbar form {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.bulk-selection,
+.bulk-select-all,
+.bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-wrap: wrap;
+}
+
+.bulk-select-all,
+.task-select-control {
+    color: var(--subtle-ink);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.bulk-select-all input,
+.task-select-control input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--blue);
+    cursor: pointer;
+}
+
+.bulk-count {
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+.bulk-inline-feedback {
+    width: 100%;
+    min-height: 1.2em;
+    margin: 0;
+    color: var(--red);
+    font-size: 0.74rem;
+}
+
+.bulk-toolbar .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+    transform: none;
+    box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.task-select-control {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+}
+
 .task-card,
 .task-item {
     display: flex;

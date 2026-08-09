@@ -18,9 +18,28 @@
             <div class="tab active" onclick="location.href='/'">全部任务</div>
             <div class="tab" onclick="location.href='/new'">新建任务</div>
         </div>
+        {% if bulk_feedback %}<div class="bulk-feedback" role="status">{{ bulk_feedback }}</div>{% endif %}
+        <div class="bulk-toolbar" data-bulk-toolbar>
+            <form id="bulk-task-form" method="post" action="{{ url_for('bulk_tasks') }}" data-bulk-form>
+                <input type="hidden" name="next" value="/">
+                <div class="bulk-selection">
+                    <label class="bulk-select-all"><input type="checkbox" data-bulk-select-all aria-label="选择当前页面全部任务"><span>全选</span></label>
+                    <span class="bulk-count" data-bulk-count>未选择任务</span>
+                </div>
+                <div class="bulk-actions">
+                    <button type="submit" name="action" value="complete" class="btn btn-success" data-bulk-submit disabled>批量完成</button>
+                    <button type="submit" name="action" value="archive" class="btn btn-danger" data-bulk-submit disabled>批量归档</button>
+                </div>
+                <p class="bulk-inline-feedback" data-bulk-feedback role="status" aria-live="polite"></p>
+            </form>
+        </div>
         <div class="task-list">
             {% for task in tasks %}
             <article class="task-card {{ task.status_class }}">
+                <label class="task-select-control">
+                    <input type="checkbox" name="task_ids" value="{{ task.id }}" form="bulk-task-form" data-bulk-task aria-label="选择任务：{{ task.title }}">
+                    <span aria-hidden="true"></span>
+                </label>
                 <div class="task-info">
                     <div class="task-title">
                         {% if task.status.value == '已完成' %}✅{% elif task.status.value == '进行中' %}🔄{% else %}⬜{% endif %}
@@ -59,3 +78,4 @@
     </section>
 </div>
 {% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='bulk.js') }}"></script>{% endblock %}

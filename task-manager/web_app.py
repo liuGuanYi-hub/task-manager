@@ -71,6 +71,17 @@ def index():
     """首页 - 显示所有任务"""
     tasks = storage.get_all()
 
+    bulk_feedback = None
+    bulk_action = request.args.get("bulk_action")
+    try:
+        bulk_count = max(0, int(request.args.get("bulk_count", "0")))
+    except ValueError:
+        bulk_count = 0
+    if bulk_action == "complete":
+        bulk_feedback = f"已批量完成 {bulk_count} 个任务。"
+    elif bulk_action == "archive":
+        bulk_feedback = f"已批量归档 {bulk_count} 个任务。"
+
     task_data = []
     for task in tasks:
         task.status_class = "done" if task.status.value == "已完成" else ("in-progress" if task.status.value == "进行中" else "")
@@ -89,6 +100,7 @@ def index():
         todo=todo,
         in_progress=in_progress,
         done=done,
+        bulk_feedback=bulk_feedback,
     )
 
 
@@ -203,6 +215,56 @@ def toggle_task(task_id):
     if next_url and next_url.startswith("/") and not next_url.startswith("//"):
         return redirect(next_url)
     return redirect(url_for("index"))
+
+
+@app.route("/tasks/bulk", methods=["POST"])
+def bulk_tasks():
+    """批量完成或归档任务，复用现有状态和归档语义。"""
+    wants_json = request.is_json or "application/json" in request.headers.get("Accept", "")
+    payload = request.get_json(silent=True) if request.is_json else request.form
+    payload = payload if payload is not None and hasattr(payload, "get") else {}
+    raw_ids = payload.get("task_ids", []) if request.is_json else request.form.getlist("task_ids")
+    if isinstance(raw_ids, (str, int)):
+        raw_ids = [raw_ids]
+    action = str(payload.get("action", "")).strip().lower()
+    task_ids = []
+    for raw_id in raw_ids if isinstance(raw_ids, (list, tuple)) else []:
+        try:
+            task_id = int(raw_id)
+        except (TypeError, ValueError):
+            continue
+        if task_id not in task_ids:
+            task_ids.append(task_id)
+
+    if action not in {"complete", "archive"}:
+        error = {"code": "invalid_action", "message": "批量操作类型无效"}
+        return (jsonify({"error": error}), 400) if wants_json else (error["message"], 400)
+    if not task_ids:
+        error = {"code": "empty_selection", "message": "请至少选择一个任务"}
+        return (jsonify({"error": error}), 400) if wants_json else (error["message"], 400)
+
+    changed = 0
+    for task_id in task_ids:
+        task = storage.get_by_id(task_id)
+        if task is None or task.archived:
+            continue
+        if action == "complete":
+            if task.status != Status.DONE:
+                task.status = Status.DONE
+                storage.update(task)
+            changed += 1
+        elif storage.archive(task_id):
+            changed += 1
+
+    if wants_json:
+        return jsonify({"data": {"action": action, "updated": changed}})
+
+    next_url = payload.get("next") or request.args.get("next")
+    if next_url and next_url.startswith("/") and not next_url.startswith("//"):
+        if next_url == "/":
+            return redirect(url_for("index", bulk_action=action, bulk_count=changed))
+        return redirect(next_url)
+    return redirect(url_for("index", bulk_action=action, bulk_count=changed))
 
 
 @app.route("/task/<int:task_id>/delete", methods=["POST"])
