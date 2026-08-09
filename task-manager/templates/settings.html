@@ -58,15 +58,21 @@
     </div>
     <div class="setting-item setting-item-column">
         <div class="setting-label">导入 JSON 备份</div>
-        <form method="POST" action="/settings/import" enctype="multipart/form-data" class="import-form">
+        <form method="POST" action="/settings/import" enctype="multipart/form-data" class="import-form" data-import-form>
             <input type="file" name="backup_file" accept="application/json,.json" required>
-            <select name="conflict" aria-label="冲突处理策略">
+            <select name="conflict" aria-label="冲突处理策略" data-conflict-select>
                 <option value="remap">冲突时新建副本（推荐）</option>
                 <option value="skip">冲突时跳过导入记录</option>
                 <option value="replace">冲突时覆盖同 ID 记录</option>
             </select>
             <div class="import-actions"><button type="submit" name="mode" value="preview" class="btn">先预览</button><button type="submit" name="mode" value="import" class="btn btn-warning">确认写入</button></div>
         </form>
+        <div class="conflict-strategy-card" data-conflict-strategy data-tone="safe" role="status" aria-live="polite">
+            <div class="conflict-strategy-heading"><span class="eyebrow">CONFLICT GUIDE</span><span class="chip" data-conflict-badge>推荐</span></div>
+            <strong data-conflict-title>冲突时新建副本</strong>
+            <p class="muted" data-conflict-description>保留当前记录，并为导入内容分配新的 ID，适合先验证备份内容。</p>
+            <small data-conflict-risk>风险较低：不会覆盖当前任务。</small>
+        </div>
         <p class="muted import-help">导入会先完整校验 JSON；预览和校验失败都不会修改现有数据。默认策略会为冲突 ID 重映射。</p>
     </div>
     <div class="panel" style="padding: 14px;">
@@ -76,6 +82,27 @@
         <div class="stat-row"><span>数据文件大小</span><strong>{{ file_size }}</strong></div>
         <div class="stat-row"><span>最后更新</span><strong>{{ last_modified }}</strong></div>
     </div>
+</section>
+<section class="settings-section recovery-drill" data-recovery-drill>
+    <div class="recovery-drill-heading">
+        <div>
+            <span class="eyebrow">RECOVERY DRILL</span>
+            <h2>备份恢复演练</h2>
+            <p class="muted">用一份测试备份走完“下载—预览—确认—检查”的流程，记录保存在当前浏览器。</p>
+        </div>
+        <div class="recovery-drill-progress" role="status" aria-live="polite">
+            <strong data-recovery-progress>0/5</strong>
+            <span data-recovery-status>尚未开始</span>
+        </div>
+    </div>
+    <ol class="recovery-steps" data-recovery-checklist>
+        <li class="recovery-step"><label><input type="checkbox" data-recovery-step="backup"> <span>下载一份完整备份文件</span></label><a href="/settings/backup" class="btn btn-small">下载备份</a></li>
+        <li class="recovery-step"><label><input type="checkbox" data-recovery-step="inspect"> <span>确认备份包含任务、项目和保存视图</span></label></li>
+        <li class="recovery-step"><label><input type="checkbox" data-recovery-step="preview"> <span>重新选择文件并执行导入预览</span></label></li>
+        <li class="recovery-step"><label><input type="checkbox" data-recovery-step="confirm"> <span>确认冲突策略后写入测试数据</span></label></li>
+        <li class="recovery-step"><label><input type="checkbox" data-recovery-step="verify"> <span>检查 Today、看板和日历中的数据</span></label></li>
+    </ol>
+    <div class="recovery-drill-footer"><span class="muted" data-recovery-saved>仅保存在当前浏览器，不会写入任务数据。</span><button type="button" class="btn btn-small" data-recovery-reset>重置演练记录</button></div>
 </section>
 <section class="settings-section">
     <h2>通知设置</h2>
@@ -88,4 +115,7 @@
     <div class="setting-item"><div class="setting-label">技术栈</div><div class="setting-control"><span class="muted">Python + Flask + Chart.js</span></div></div>
     <div class="setting-item"><div class="setting-label">GitHub 仓库</div><div class="setting-control"><a href="https://github.com/liuGuanYi-hub/task-manager" target="_blank" class="btn">查看</a></div></div>
 </section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='settings.js') }}"></script>
 {% endblock %}
