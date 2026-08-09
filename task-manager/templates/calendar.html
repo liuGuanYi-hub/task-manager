@@ -12,7 +12,7 @@
     </div>
     <div class="view-toggle">
         <button class="btn btn-primary">月视图</button>
-        <button class="btn" onclick="location.href='/calendar/week'">周视图</button>
+        <a class="btn" href="{{ url_for('calendar.calendar_week_view') }}">周视图</a>
     </div>
 </div>
 <section class="calendar-content">

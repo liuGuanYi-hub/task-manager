@@ -2,7 +2,7 @@
 from flask import Blueprint, render_template, request, url_for
 from storage.factory import create_storage as JSONStorage
 from models.task import Task, parse_datetime
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from calendar import monthrange
 from typing import List
 from urllib.parse import parse_qs
@@ -16,6 +16,30 @@ def get_tasks_for_date(tasks: List[Task], target_date: date) -> List[Task]:
         task for task in tasks
         if not task.archived and task.due_date and task.due_date.date() == target_date
     ]
+
+
+def _week_task_payload(task: Task, project_names: dict[int, str], date_value: date) -> dict:
+    """把周视图任务转换为详情抽屉可复用的 data 属性。"""
+    return {
+        "id": task.id,
+        "title": task.title,
+        "description": task.description or "暂无描述",
+        "priority": task.priority.value,
+        "priority_value": task.priority.value,
+        "priority_class": "high" if task.priority.value == "高" else "medium" if task.priority.value == "中" else "low",
+        "status": task.status.value,
+        "status_class": "done" if task.status.value == "已完成" else "",
+        "due_date": task.due_date.strftime("%Y-%m-%dT%H:%M") if task.due_date else "",
+        "meta": task.due_date.strftime("%m月%d日 %H:%M") if task.due_date else "暂无截止日期",
+        "tag": task.tags[0] if task.tags else "未分类",
+        "tags": ", ".join(task.tags),
+        "project_id": str(task.project_id) if task.project_id is not None else "",
+        "project": project_names.get(task.project_id, "未归属项目"),
+        "updated": task.updated_at.strftime("%Y-%m-%d %H:%M"),
+        "edit_url": url_for("edit_task", task_id=task.id),
+        "update_url": url_for("update_task", task_id=task.id, next="/calendar/week"),
+        "context": f"{date_value.strftime('%Y年%m月%d日')} 周视图",
+    }
 
 
 @calendar_bp.route("/")
@@ -101,5 +125,62 @@ def calendar_view():
         days=days,
         today=datetime.now().isoformat(),
         tasks_json=tasks_json,
+        projects=projects,
+    )
+
+
+@calendar_bp.route("/week")
+def calendar_week_view():
+    """按任务截止日期展示当前周的 7 天工作安排。"""
+    storage = JSONStorage()
+    tasks = storage.get_all()
+    projects = storage.get_projects()
+    project_names = {project.id: project.name for project in projects}
+
+    params = parse_qs(request.query_string.decode())
+    current_date = datetime.now()
+    if "date" in params:
+        try:
+            current_date = parse_datetime(params["date"][0], current_date) or current_date
+        except ValueError:
+            pass
+
+    week_start = (current_date - timedelta(days=current_date.weekday())).replace(
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0,
+    )
+    today = datetime.now().date()
+    week_days = []
+    weekday_labels = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+    for offset, label in enumerate(weekday_labels):
+        day_value = (week_start + timedelta(days=offset)).date()
+        day_tasks = get_tasks_for_date(tasks, day_value)
+        week_days.append(
+            {
+                "label": label,
+                "date": day_value.isoformat(),
+                "title": day_value.strftime("%m月%d日"),
+                "is_today": day_value == today,
+                "tasks": [
+                    _week_task_payload(task, project_names, day_value)
+                    for task in day_tasks
+                ],
+            }
+        )
+
+    week_start_value = week_start.date()
+    previous_week = (week_start_value - timedelta(days=7)).isoformat()
+    next_week = (week_start_value + timedelta(days=7)).isoformat()
+    week_end_value = week_start_value + timedelta(days=6)
+
+    return render_template(
+        "calendar_week.html",
+        week_title=f"{week_start_value.strftime('%Y年%m月%d日')} - {week_end_value.strftime('%m月%d日')}",
+        week_start=week_start_value.isoformat(),
+        previous_week=previous_week,
+        next_week=next_week,
+        week_days=week_days,
         projects=projects,
     )

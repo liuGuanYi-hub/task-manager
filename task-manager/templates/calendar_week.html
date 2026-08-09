@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% set active_page = "calendar" %}
+{% block title %}日历周视图 - 任务管理系统{% endblock %}
+{% block page_title %}日历周视图{% endblock %}
+{% block page_subtitle %}按截止日期安排这一周的工作节奏{% endblock %}
+{% block content %}
+<div class="calendar-controls">
+    <div class="month-nav">
+        <a class="btn" href="{{ url_for('calendar.calendar_week_view', date=previous_week) }}">上周</a>
+        <div class="month-title">{{ week_title }}</div>
+        <a class="btn" href="{{ url_for('calendar.calendar_week_view', date=next_week) }}">下周</a>
+    </div>
+    <div class="view-toggle">
+        <a class="btn" href="{{ url_for('calendar.calendar_view', date=week_start) }}">月视图</a>
+        <span class="btn btn-primary" aria-current="page">周视图</span>
+        <a class="btn" href="{{ url_for('calendar.calendar_week_view') }}">本周</a>
+    </div>
+</div>
+<section class="calendar-week-content" aria-label="一周任务安排">
+    <div class="calendar-week-grid">
+        {% for day in week_days %}
+        <article class="calendar-week-day {{ 'is-today' if day.is_today else '' }}">
+            <header class="calendar-week-day-header">
+                <div><span>{{ day.label }}</span><strong>{{ day.title }}</strong></div>
+                <em>{{ day.tasks|length }}</em>
+            </header>
+            <div class="calendar-week-task-list">
+                {% for task in day.tasks %}
+                <button
+                    type="button"
+                    class="calendar-week-task {{ task.status_class }}"
+                    data-task-detail
+                    data-task-id="{{ task.id }}"
+                    data-title="{{ task.title }}"
+                    data-priority="{{ task.priority }}优先级"
+                    data-priority-value="{{ task.priority_value }}"
+                    data-priority-class="{{ task.priority_class }}"
+                    data-meta="{{ task.meta }}"
+                    data-due-date="{{ task.due_date }}"
+                    data-tag="{{ task.tag }}"
+                    data-tags="{{ task.tags }}"
+                    data-project-id="{{ task.project_id }}"
+                    data-project="{{ task.project }}"
+                    data-status="{{ task.status }}"
+                    data-context="{{ task.context }}"
+                    data-description="{{ task.description }}"
+                    data-updated="{{ task.updated }}"
+                    data-edit-url="{{ task.edit_url }}"
+                    data-update-url="{{ task.update_url }}"
+                    aria-label="查看 {{ task.title }} 详情"
+                >
+                    <span class="calendar-week-task-title">{{ task.title }}</span>
+                    <span class="calendar-week-task-meta"><span class="today-priority today-priority-{{ task.priority_class }}">{{ task.priority }}</span><span>{{ task.status }}</span></span>
+                </button>
+                {% else %}
+                <p class="calendar-week-empty">暂无截止任务</p>
+                {% endfor %}
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% include "_task_detail_drawer.html" %}
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='today.js') }}"></script>{% endblock %}

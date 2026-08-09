@@ -937,6 +937,126 @@ body.search-open {
     padding: 18px;
 }
 
+.calendar-week-content {
+    padding: 18px;
+    overflow-x: auto;
+}
+
+.calendar-week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(150px, 1fr));
+    gap: 10px;
+    min-width: 1080px;
+}
+
+.calendar-week-day {
+    min-height: 390px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface);
+}
+
+.calendar-week-day.is-today {
+    border-color: rgba(79, 124, 255, 0.72);
+    box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.10);
+}
+
+.calendar-week-day-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface-soft);
+}
+
+.calendar-week-day-header div {
+    display: grid;
+    gap: 4px;
+}
+
+.calendar-week-day-header span {
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+.calendar-week-day-header strong {
+    color: var(--ink);
+    font-size: 0.9rem;
+}
+
+.calendar-week-day-header em {
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border-radius: 999px;
+    color: var(--blue);
+    background: rgba(79, 124, 255, 0.12);
+    font-size: 0.68rem;
+    font-style: normal;
+    font-weight: 900;
+}
+
+.calendar-week-task-list {
+    display: grid;
+    gap: 8px;
+    padding: 10px;
+}
+
+.calendar-week-task {
+    display: grid;
+    width: 100%;
+    gap: 8px;
+    padding: 11px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    color: var(--ink);
+    background: var(--surface-soft);
+    cursor: pointer;
+    text-align: left;
+    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.calendar-week-task:hover,
+.calendar-week-task:focus-visible {
+    border-color: rgba(79, 124, 255, 0.52);
+    background: var(--surface-strong);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.calendar-week-task.done {
+    opacity: 0.62;
+}
+
+.calendar-week-task-title {
+    overflow: hidden;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.calendar-week-task-meta {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--muted);
+    font-size: 0.68rem;
+}
+
+.calendar-week-empty {
+    margin: 0;
+    padding: 16px 6px;
+    color: var(--muted);
+    font-size: 0.72rem;
+    text-align: center;
+}
+
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(88px, 1fr));
