@@ -9,7 +9,8 @@ from web_app import app
 def _seed_today_storage(tmp_path):
     storage = JSONStorage(tmp_path / "tasks.json")
     project = storage.add_project(Project(name="阶段 11 项目"))
-    current = datetime.now().replace(second=0, microsecond=0)
+    # 固定在当天中午，避免测试运行跨过午夜后“前一小时”落到前一天。
+    current = datetime.now().replace(hour=12, minute=0, second=0, microsecond=0)
 
     today_task = storage.add(
         Task(
