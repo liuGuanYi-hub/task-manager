@@ -11,7 +11,13 @@ from pathlib import Path
 settings_bp = Blueprint("settings", __name__, url_prefix="/settings")
 
 
-def _render_settings(storage: JSONStorage, import_error=None, import_success=None, import_preview=None):
+def _render_settings(
+    storage: JSONStorage,
+    import_error=None,
+    import_success=None,
+    import_preview=None,
+    import_conflict="remap",
+):
     """构造设置页面，统一展示数据和导入结果。"""
     db_path = Path(storage.db_path)
     if db_path.exists():
@@ -31,6 +37,7 @@ def _render_settings(storage: JSONStorage, import_error=None, import_success=Non
         import_error=import_error,
         import_success=import_success,
         import_preview=import_preview,
+        import_conflict=import_conflict,
     )
 
 
@@ -118,30 +125,55 @@ def backup_data():
 def import_data():
     """导入 JSON 备份，校验失败时保持现有数据不变。"""
     storage = JSONStorage()
+    conflict = request.form.get("conflict", "remap")
+    selected_conflict = conflict if conflict in {"remap", "skip", "replace"} else "remap"
+    mode = request.form.get("mode", "import")
     uploaded = request.files.get("backup_file")
     if uploaded is None or not uploaded.filename:
-        return _render_settings(storage, import_error="请选择 JSON 备份文件"), 400
+        return _render_settings(
+            storage,
+            import_error="请选择 JSON 备份文件",
+            import_conflict=selected_conflict,
+        ), 400
 
     raw = uploaded.read(5 * 1024 * 1024 + 1)
     if len(raw) > 5 * 1024 * 1024:
-        return _render_settings(storage, import_error="导入文件不能超过 5 MB"), 400
+        return _render_settings(
+            storage,
+            import_error="导入文件不能超过 5 MB",
+            import_conflict=selected_conflict,
+        ), 400
 
     try:
         payload = json.loads(raw.decode("utf-8-sig"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        return _render_settings(storage, import_error="导入文件不是有效的 UTF-8 JSON"), 400
+        return _render_settings(
+            storage,
+            import_error="导入文件不是有效的 UTF-8 JSON",
+            import_conflict=selected_conflict,
+        ), 400
 
-    conflict = request.form.get("conflict", "remap")
-    mode = request.form.get("mode", "import")
     try:
         if mode == "preview":
             result = storage.preview_import(payload, conflict=conflict)
-            return _render_settings(storage, import_preview=result)
+            return _render_settings(
+                storage,
+                import_preview=result,
+                import_conflict=selected_conflict,
+            )
         result = storage.import_payload(payload, conflict=conflict)
     except ImportValidationError as exc:
-        return _render_settings(storage, import_error=str(exc)), 400
+        return _render_settings(
+            storage,
+            import_error=str(exc),
+            import_conflict=selected_conflict,
+        ), 400
     except (OSError, TypeError, ValueError) as exc:
-        return _render_settings(storage, import_error=f"导入失败，原数据未改变：{exc}"), 400
+        return _render_settings(
+            storage,
+            import_error=f"导入失败，原数据未改变：{exc}",
+            import_conflict=selected_conflict,
+        ), 400
 
     summary = f"导入完成：任务 {result['tasks']} 个，项目 {result['projects']} 个，视图 {result['saved_views']} 个"
     return redirect(url_for("settings.settings_page", imported=summary))
