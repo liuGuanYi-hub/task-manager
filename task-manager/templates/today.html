@@ -90,6 +90,24 @@
                 <button type="button" class="today-capture-input" disabled><span>写下一个任务...</span><kbd>N</kbd></button>
                 <div class="today-shortcut-hint"><span>快捷键</span><strong>N</strong><span>新建任务</span></div>
             </section>
+            <section class="today-timer-card panel" data-focus-timer data-focus-storage-key="task-manager:focus-timer:v1">
+                <div class="today-sidebar-heading">
+                    <div><span class="eyebrow">FOCUS TIMER</span><h2>专注计时</h2></div>
+                    <span class="today-timer-state" data-focus-state>准备开始</span>
+                </div>
+                <div class="today-timer-display" data-focus-display role="timer" aria-live="polite" aria-label="专注剩余时间">25:00</div>
+                <div class="today-timer-progress" role="progressbar" aria-label="专注计时进度" aria-valuemin="0" aria-valuemax="1500" aria-valuenow="1500"><span data-focus-progress></span></div>
+                <div class="today-timer-presets" role="group" aria-label="选择专注时长">
+                    <button type="button" class="today-timer-preset is-selected" data-focus-preset data-minutes="25" aria-pressed="true">25 分钟</button>
+                    <button type="button" class="today-timer-preset" data-focus-preset data-minutes="50" aria-pressed="false">50 分钟</button>
+                    <button type="button" class="today-timer-preset" data-focus-preset data-minutes="15" aria-pressed="false">15 分钟</button>
+                </div>
+                <div class="today-timer-actions">
+                    <button type="button" class="btn btn-primary" data-focus-start>开始专注</button>
+                    <button type="button" class="btn" data-focus-reset>重置</button>
+                </div>
+                <p class="muted today-timer-message" data-focus-message>状态只保存在当前浏览器，刷新页面后会继续。</p>
+            </section>
             <section class="today-focus-card panel">
                 <span class="eyebrow">FOCUS ROUTE</span>
                 <h2>继续你的工作流</h2>
@@ -105,4 +123,4 @@
 </div>
 {% include "_task_detail_drawer.html" %}
 {% endblock %}
-{% block scripts %}<script src="{{ url_for('static', filename='today.js') }}"></script>{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='today.js') }}"></script><script src="{{ url_for('static', filename='focus.js') }}"></script>{% endblock %}
