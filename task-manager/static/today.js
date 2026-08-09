@@ -98,9 +98,34 @@
         });
     }
 
+    function initQuickCaptureShortcut() {
+        var input = document.querySelector("[data-quick-capture-input]");
+        if (!input) {
+            return;
+        }
+
+        function isTypingTarget(target) {
+            if (!target) {
+                return false;
+            }
+            var tagName = target.tagName ? target.tagName.toLowerCase() : "";
+            return tagName === "input" || tagName === "textarea" || tagName === "select" || target.isContentEditable;
+        }
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key.toLowerCase() !== "n" || event.ctrlKey || event.metaKey || event.altKey || isTypingTarget(event.target)) {
+                return;
+            }
+            event.preventDefault();
+            input.focus();
+        });
+    }
+
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", initTodayDrawer);
+        document.addEventListener("DOMContentLoaded", initQuickCaptureShortcut);
     } else {
         initTodayDrawer();
+        initQuickCaptureShortcut();
     }
 })();

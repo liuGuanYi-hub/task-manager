@@ -2957,6 +2957,17 @@ body.search-open {
     font-size: 0.72rem;
 }
 
+.today-task-focus-action.is-selected {
+    border-color: rgba(79, 124, 255, 0.55);
+    color: var(--blue);
+    background: rgba(79, 124, 255, 0.10);
+}
+
+.today-task-focus-action:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
 .today-sidebar > section {
     padding: 20px;
 }
@@ -2986,6 +2997,35 @@ body.search-open {
     color: var(--muted);
     background: var(--surface-soft);
     text-align: left;
+}
+
+.today-quick-add-form {
+    display: flex;
+    gap: 8px;
+}
+
+.today-quick-add-input {
+    width: 100%;
+    min-width: 0;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    color: var(--ink);
+    background: var(--control-surface);
+    outline: none;
+    font: inherit;
+    font-size: 0.78rem;
+}
+
+.today-quick-add-input:focus {
+    border-color: rgba(79, 124, 255, 0.64);
+    box-shadow: 0 0 0 4px rgba(79, 124, 255, 0.12);
+}
+
+.today-quick-add-submit {
+    flex: 0 0 auto;
+    min-width: 58px;
+    justify-content: center;
 }
 
 .today-capture-input kbd,
@@ -3697,6 +3737,47 @@ html[data-theme="system"] .board-card-done {
     letter-spacing: -0.08em;
     line-height: 1;
     text-align: center;
+}
+
+.today-focus-task {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    color: var(--muted);
+    background: var(--surface-soft);
+    font-size: 0.72rem;
+}
+
+.today-focus-task strong {
+    overflow: hidden;
+    color: var(--subtle-ink);
+    font-size: 0.74rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.today-focus-task.has-task {
+    border-color: rgba(79, 124, 255, 0.42);
+    background: rgba(79, 124, 255, 0.08);
+}
+
+.today-focus-task button {
+    padding: 2px 0;
+    border: 0;
+    color: var(--blue);
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.68rem;
+}
+
+.today-focus-task button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
 }
 
 .today-timer-progress {

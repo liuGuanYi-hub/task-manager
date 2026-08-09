@@ -12,6 +12,9 @@
     var message = root.querySelector("[data-focus-message]");
     var progress = root.querySelector("[data-focus-progress]");
     var progressBar = root.querySelector(".today-timer-progress");
+    var taskLabel = root.querySelector("[data-focus-task-label]");
+    var clearTaskButton = root.querySelector("[data-focus-task-clear]");
+    var taskSelectors = Array.prototype.slice.call(document.querySelectorAll("[data-focus-task-select]"));
     var startButton = root.querySelector("[data-focus-start]");
     var resetButton = root.querySelector("[data-focus-reset]");
     var presets = Array.prototype.slice.call(root.querySelectorAll("[data-focus-preset]"));
@@ -24,7 +27,8 @@
             durationSeconds: duration,
             remainingSeconds: duration,
             status: "idle",
-            startedAt: null
+            startedAt: null,
+            focusTask: null
         };
     }
 
@@ -42,10 +46,21 @@
             var saved = JSON.parse(window.localStorage.getItem(storageKey) || "null");
             if (isValidState(saved)) {
                 state = saved;
+                state.focusTask = normaliseFocusTask(saved.focusTask);
             }
         } catch (error) {
             state = createState(25);
         }
+    }
+
+    function normaliseFocusTask(value) {
+        if (!value || value.id === undefined || value.id === null || !String(value.title || "").trim()) {
+            return null;
+        }
+        return {
+            id: String(value.id),
+            title: String(value.title).trim()
+        };
     }
 
     function saveState() {
@@ -93,7 +108,14 @@
         display.textContent = formatTime(state.remainingSeconds);
         display.setAttribute("aria-label", "专注剩余 " + formatTime(state.remainingSeconds));
         stateLabel.textContent = copy.label;
-        message.textContent = copy.message;
+        message.textContent = copy.message + (state.focusTask ? " 当前任务：" + state.focusTask.title : " 可先从 Today 任务卡片选择专注任务。");
+        if (taskLabel) {
+            var taskName = taskLabel.querySelector("strong");
+            if (taskName) {
+                taskName.textContent = state.focusTask ? state.focusTask.title : "未选择任务";
+            }
+            taskLabel.classList.toggle("has-task", Boolean(state.focusTask));
+        }
         progress.style.width = ((1 - ratio) * 100) + "%";
         progressBar.setAttribute("aria-valuemax", String(state.durationSeconds));
         progressBar.setAttribute("aria-valuenow", String(state.remainingSeconds));
@@ -105,6 +127,16 @@
             preset.setAttribute("aria-pressed", selected ? "true" : "false");
             preset.disabled = state.status === "running";
         });
+        taskSelectors.forEach(function (selector) {
+            var selected = state.focusTask && String(selector.dataset.focusTaskId) === state.focusTask.id;
+            selector.classList.toggle("is-selected", Boolean(selected));
+            selector.textContent = selected ? "当前专注" : "专注";
+            selector.setAttribute("aria-pressed", selected ? "true" : "false");
+            selector.disabled = state.status === "running";
+        });
+        if (clearTaskButton) {
+            clearTaskButton.disabled = !state.focusTask || state.status === "running";
+        }
     }
 
     function startTicker() {
@@ -138,7 +170,9 @@
     }
 
     function reset() {
+        var selectedTask = state.focusTask;
         state = createState(state.durationSeconds / 60);
+        state.focusTask = selectedTask;
         saveState();
         stopTicker();
         render();
@@ -149,11 +183,36 @@
             if (state.status === "running") {
                 return;
             }
+            var selectedTask = state.focusTask;
             state = createState(Number(preset.dataset.minutes));
+            state.focusTask = selectedTask;
             saveState();
             render();
         });
     });
+    taskSelectors.forEach(function (selector) {
+        selector.addEventListener("click", function () {
+            if (state.status === "running") {
+                return;
+            }
+            state.focusTask = normaliseFocusTask({
+                id: selector.dataset.focusTaskId,
+                title: selector.dataset.focusTaskTitle
+            });
+            saveState();
+            render();
+        });
+    });
+    if (clearTaskButton) {
+        clearTaskButton.addEventListener("click", function () {
+            if (state.status === "running") {
+                return;
+            }
+            state.focusTask = null;
+            saveState();
+            render();
+        });
+    }
     startButton.addEventListener("click", startOrPause);
     resetButton.addEventListener("click", reset);
     document.addEventListener("visibilitychange", render);
