@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 settings_bp = Blueprint("settings", __name__, url_prefix="/settings")
+MAX_IMPORT_BYTES = 5 * 1024 * 1024
 
 
 def _render_settings(
@@ -136,11 +137,17 @@ def import_data():
             import_conflict=selected_conflict,
         ), 400
 
-    raw = uploaded.read(5 * 1024 * 1024 + 1)
-    if len(raw) > 5 * 1024 * 1024:
+    raw = uploaded.read(MAX_IMPORT_BYTES + 1)
+    if len(raw) > MAX_IMPORT_BYTES:
         return _render_settings(
             storage,
             import_error="导入文件不能超过 5 MB",
+            import_conflict=selected_conflict,
+        ), 400
+    if not raw:
+        return _render_settings(
+            storage,
+            import_error="导入文件不能为空",
             import_conflict=selected_conflict,
         ), 400
 
