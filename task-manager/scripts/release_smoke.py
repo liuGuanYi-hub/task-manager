@@ -54,14 +54,32 @@ def _request_json(
 
 
 def _find_port() -> int:
+    occupied = []
     for port in range(5084, 5120):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
             try:
                 probe.bind(("127.0.0.1", port))
-            except OSError:
+            except OSError as error:
+                occupied.append(f"{port}: {error}")
                 continue
             return port
-    raise RuntimeError("没有找到可用的本地 smoke 端口")
+    detail = "; ".join(occupied[-5:]) or "没有捕获到端口错误"
+    raise RuntimeError(f"没有找到可用的本地 smoke 端口（5084-5119）；最近错误：{detail}")
+
+
+def _tail_text(path: Path, limit: int = 2000) -> str:
+    try:
+        content = path.read_text(encoding="utf-8", errors="replace").strip()
+    except OSError as error:
+        return f"读取日志失败：{error}"
+    return content[-limit:] if content else "（日志为空）"
+
+
+def _write_summary(run_root: Path, summary: dict) -> None:
+    (run_root / "summary.json").write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 def _run_playwright(run_root: Path, session: str, *arguments: str) -> None:
@@ -83,20 +101,44 @@ def _run_playwright(run_root: Path, session: str, *arguments: str) -> None:
 
 def main() -> int:
     app_root = APP_ROOT
-    run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
-    run_root = app_root / "output" / "release-smoke" / f"run-{run_id}"
-    run_root.mkdir(parents=True, exist_ok=False)
+    base_run_id = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+    run_id = base_run_id
+    attempt = 0
+    while True:
+        run_root = app_root / "output" / "release-smoke" / f"run-{run_id}"
+        try:
+            run_root.mkdir(parents=True, exist_ok=False)
+            break
+        except FileExistsError:
+            attempt += 1
+            run_id = f"{base_run_id}-{attempt}"
+
     db_path = run_root / "runtime.db"
     empty_fixture = run_root / "empty.json"
     empty_fixture.write_bytes(b"")
-    stdout_handle = (run_root / "server.stdout.log").open("w", encoding="utf-8")
-    stderr_handle = (run_root / "server.stderr.log").open("w", encoding="utf-8")
+    stdout_path = run_root / "server.stdout.log"
+    stderr_path = run_root / "server.stderr.log"
+    stdout_handle = None
+    stderr_handle = None
     server = None
+    server_exit_code = None
+    browser_started = False
+    port = None
     session = f"release-smoke-{run_id}"
+    failure = None
+    summary = {
+        "status": "running",
+        "run_id": run_id,
+        "evidence": str(run_root),
+        "checks": {},
+    }
 
     try:
+        stdout_handle = stdout_path.open("w", encoding="utf-8")
+        stderr_handle = stderr_path.open("w", encoding="utf-8")
         if not NPX_COMMAND:
             raise RuntimeError("未找到 npx.cmd/npx，请先安装 Node.js/npm")
+
         storage = SQLiteStorage(db_path)
         project = storage.add_project(Project(name="发布 smoke 项目"))
         storage.add(Task(title="发布 smoke 任务", project_id=project.id))
@@ -110,6 +152,7 @@ def main() -> int:
             }
         )
         port = _find_port()
+        summary["port"] = port
         base_url = f"http://127.0.0.1:{port}"
         server = subprocess.Popen(
             [
@@ -131,16 +174,30 @@ def main() -> int:
         )
 
         health = None
+        last_health_status = None
+        last_health_error = None
         for _ in range(30):
             try:
-                status, health = _request_json(f"{base_url}/api/v1/health")
-                if status == 200:
+                last_health_status, health = _request_json(f"{base_url}/api/v1/health")
+                if last_health_status == 200:
                     break
-            except RuntimeError:
-                pass
+            except RuntimeError as error:
+                last_health_error = str(error)
+            if server.poll() is not None:
+                break
             time.sleep(0.25)
         if not health or health.get("data", {}).get("backend") != "sqlite":
-            raise RuntimeError("Flask SQLite 服务未在预期时间内启动")
+            exit_code = server.poll() if server is not None else None
+            raise RuntimeError(
+                "Flask SQLite 服务未在预期时间内启动；"
+                f"server_exit={exit_code}; last_status={last_health_status}; "
+                f"last_error={last_health_error}; stderr_tail={_tail_text(stderr_path)}"
+            )
+        summary["checks"]["health"] = {
+            "status": last_health_status,
+            "backend": health.get("data", {}).get("backend"),
+            "database": health.get("data", {}).get("database"),
+        }
 
         with urlopen(f"{base_url}/settings/", timeout=10) as settings_response:
             settings_status = settings_response.status
@@ -148,6 +205,7 @@ def main() -> int:
         _assert_equal("设置页状态", settings_status, 200)
         if "总任务数" not in settings_html or "项目数" not in settings_html:
             raise AssertionError("设置页没有渲染 SQLite 统计信息")
+        summary["checks"]["settings"] = {"status": settings_status}
 
         unauthorized_status, unauthorized = _request_json(f"{base_url}/api/v1/tasks")
         _assert_equal("未授权任务接口", unauthorized_status, 401)
@@ -170,8 +228,14 @@ def main() -> int:
         )
         _assert_equal("无效任务接口", invalid_status, 400)
         _assert_equal("无效任务错误码", invalid["error"]["code"], "invalid_request")
+        summary["checks"]["api"] = {
+            "unauthorized": unauthorized_status,
+            "authorized_page": authorized_status,
+            "invalid_request": invalid_status,
+        }
 
         _run_playwright(run_root, session, "open", f"{base_url}/settings/")
+        browser_started = True
         _run_playwright(run_root, session, "snapshot")
         browser_path = json.dumps(str(empty_fixture))
         browser_check = (
@@ -188,26 +252,52 @@ def main() -> int:
         )
         _run_playwright(run_root, session, "run-code", browser_check)
         _run_playwright(run_root, session, "screenshot")
-
-        print("RELEASE_SMOKE_PASSED")
-        print("backend=sqlite")
-        print("api=health-200 unauthorized-401 authorized-200 invalid-400")
-        print("browser=empty-import-400")
-        print(f"evidence={run_root}")
-        return 0
+        summary["checks"]["browser"] = {
+            "empty_import": 400,
+            "screenshot_count": len(list((run_root / ".playwright-cli").glob("*.png"))),
+        }
+    except Exception as error:
+        failure = error
     finally:
-        try:
-            _run_playwright(run_root, session, "close")
-        except Exception:
-            pass
+        if browser_started:
+            try:
+                _run_playwright(run_root, session, "close")
+            except Exception:
+                pass
         if server is not None:
+            server_exit_code = server.poll()
             server.terminate()
             try:
                 server.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 server.kill()
-        stdout_handle.close()
-        stderr_handle.close()
+                server.wait(timeout=5)
+        if stdout_handle is not None:
+            stdout_handle.close()
+        if stderr_handle is not None:
+            stderr_handle.close()
+        summary["status"] = "failed" if failure else "passed"
+        if port is not None:
+            summary["port"] = port
+        summary["server_exit_code"] = server_exit_code
+        if failure:
+            summary["error"] = str(failure)
+            summary["server_stderr_tail"] = _tail_text(stderr_path)
+        _write_summary(run_root, summary)
+
+    if failure:
+        print("RELEASE_SMOKE_FAILED", file=sys.stderr)
+        print(f"error={failure}", file=sys.stderr)
+        print(f"evidence={run_root}", file=sys.stderr)
+        return 1
+
+    print("RELEASE_SMOKE_PASSED")
+    print("backend=sqlite")
+    print("api=health-200 unauthorized-401 authorized-200 invalid-400")
+    print("browser=empty-import-400")
+    print(f"evidence={run_root}")
+    print(f"summary={run_root / 'summary.json'}")
+    return 0
 
 
 if __name__ == "__main__":
