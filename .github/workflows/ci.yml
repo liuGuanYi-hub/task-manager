@@ -43,3 +43,6 @@ jobs:
 
       - name: Check whitespace errors
         run: git diff --check
+
+      - name: Scan for sensitive values
+        run: python task-manager/scripts/security_scan.py --root .
