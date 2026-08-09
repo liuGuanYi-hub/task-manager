@@ -1,5 +1,5 @@
 """日历视图路由"""
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, url_for
 from storage.factory import create_storage as JSONStorage
 from models.task import Task, parse_datetime
 from datetime import date, datetime
@@ -23,6 +23,8 @@ def calendar_view():
     """日历视图"""
     storage = JSONStorage()
     tasks = storage.get_all()
+    projects = storage.get_projects()
+    project_names = {project.id: project.name for project in projects}
 
     params = parse_qs(request.query_string.decode())
     current_date = datetime.now()
@@ -69,13 +71,26 @@ def calendar_view():
         day_tasks = get_tasks_for_date(tasks, date_value)
         tasks_json[date_str] = [
             {
+                "id": t.id,
                 "title": t.title,
-                "description": t.description,
+                "description": t.description or "暂无描述",
                 "priority": t.priority.value,
+                "priority_value": t.priority.value,
+                "priority_class": "high" if t.priority.value == "高" else "medium" if t.priority.value == "中" else "low",
                 "priority_icon": "🔴" if t.priority.value == "高" else "🟡" if t.priority.value == "中" else "🟢",
                 "status": t.status.value,
                 "status_icon": "✅" if t.status.value == "已完成" else "🔄" if t.status.value == "进行中" else "⬜",
                 "status_class": "done" if t.status.value == "已完成" else "",
+                "due_date": t.due_date.strftime("%Y-%m-%dT%H:%M") if t.due_date else "",
+                "meta": t.due_date.strftime("%m月%d日 %H:%M") if t.due_date else "暂无截止日期",
+                "tag": t.tags[0] if t.tags else "未分类",
+                "tags": ", ".join(t.tags),
+                "project_id": str(t.project_id) if t.project_id is not None else "",
+                "project": project_names.get(t.project_id, "未归属项目"),
+                "updated": t.updated_at.strftime("%Y-%m-%d %H:%M"),
+                "edit_url": url_for("edit_task", task_id=t.id),
+                "update_url": url_for("update_task", task_id=t.id, next="/calendar/"),
+                "context": f"{date_value.strftime('%Y年%m月%d日')} 日历",
             }
             for t in day_tasks
         ]
@@ -86,4 +101,5 @@ def calendar_view():
         days=days,
         today=datetime.now().isoformat(),
         tasks_json=tasks_json,
+        projects=projects,
     )

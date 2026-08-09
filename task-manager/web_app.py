@@ -1,5 +1,5 @@
 """简单的 Web 界面"""
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, jsonify, render_template, request, redirect, url_for
 from storage.factory import create_storage as JSONStorage
 from models.task import Task, Priority, Status, parse_datetime
 from routes.stats_routes import stats_bp
@@ -13,6 +13,8 @@ from routes.archive_routes import archive_bp
 from routes.settings_routes import settings_bp
 from routes.api_routes import api_bp
 from routes.today_routes import today_bp
+from routes.reminder_routes import reminders_bp
+from routes.search_routes import search_bp
 
 app = Flask(__name__)
 storage = JSONStorage()
@@ -29,6 +31,39 @@ app.register_blueprint(archive_bp)
 app.register_blueprint(settings_bp)
 app.register_blueprint(api_bp)
 app.register_blueprint(today_bp)
+app.register_blueprint(reminders_bp)
+app.register_blueprint(search_bp)
+
+
+def _is_api_request() -> bool:
+    """让未知 API 路径保持 JSON 错误契约，不被网页错误页接管。"""
+    return request.path.startswith("/api/")
+
+
+@app.errorhandler(404)
+def handle_not_found(error):
+    """为网页请求提供可回到工作台的 404 页面。"""
+    if _is_api_request():
+        return jsonify({"error": {"code": "not_found", "message": "资源不存在"}}), 404
+    return render_template(
+        "error.html",
+        status_code=404,
+        error_title="页面没有找到",
+        error_message="这个入口可能已经移动，或者地址输入有误。",
+    ), 404
+
+
+@app.errorhandler(500)
+def handle_internal_error(error):
+    """隐藏网页内部异常细节，同时保留 API 的机器可读响应。"""
+    if _is_api_request():
+        return jsonify({"error": {"code": "internal_error", "message": "服务器暂时无法处理请求"}}), 500
+    return render_template(
+        "error.html",
+        status_code=500,
+        error_title="页面暂时无法打开",
+        error_message="服务器遇到了一点问题，请稍后重试。",
+    ), 500
 
 
 @app.route("/")
@@ -142,6 +177,9 @@ def update_task(task_id):
     task.tags = [t.strip() for t in tags_str.split(",") if t.strip()] if tags_str else []
 
     storage.update(task)
+    next_url = request.args.get("next")
+    if next_url and next_url.startswith("/") and not next_url.startswith("//"):
+        return redirect(next_url)
     return redirect(url_for("index"))
 
 
@@ -158,6 +196,9 @@ def toggle_task(task_id):
         task.status = Status.DONE
 
     storage.update(task)
+    next_url = request.args.get("next")
+    if next_url and next_url.startswith("/") and not next_url.startswith("//"):
+        return redirect(next_url)
     return redirect(url_for("index"))
 
 

@@ -5,7 +5,7 @@
 {% block page_subtitle %}把工作放进清晰的状态流，专注于下一张卡片{% endblock %}
 {% block hero_action %}<a href="{{ url_for('new_task') }}" class="btn btn-primary">新建任务</a>{% endblock %}
 {% block content %}
-<div class="board-layout">
+<div class="board-layout" data-board-root>
     <section class="board-toolbar panel">
         <div>
             <span class="eyebrow board-eyebrow">FLOW BOARD</span>
@@ -14,6 +14,10 @@
                 {% if selected_project %}当前查看项目：{{ selected_project.name }}{% else %}显示全部项目的任务{% endif %}
                 · 共 {{ total_tasks }} 个未归档任务
             </p>
+        </div>
+        <div class="board-toolbar-status" aria-label="看板交互说明">
+            <span class="board-preview-badge">已连接</span>
+            <span class="muted">拖拽后保存到任务状态</span>
         </div>
         <form method="GET" action="{{ url_for('board.board_view') }}" class="board-filter">
             <label for="project-filter">项目</label>
@@ -30,20 +34,26 @@
 
     <section class="board-columns" aria-label="任务状态看板">
         {% for column in columns %}
-        <article class="board-column board-column-{{ column.accent }}">
+        <article class="board-column board-column-{{ column.accent }}" data-board-column="{{ column.key.value }}">
             <header class="board-column-header">
                 <div>
-                    <div class="board-column-title"><span class="board-column-icon">{{ column.icon }}</span>{{ column.label }}</div>
+                    <button type="button" class="board-column-toggle" data-board-toggle aria-expanded="true" aria-controls="board-column-cards-{{ column.accent }}">
+                        <span class="board-column-title"><span class="board-column-icon" aria-hidden="true">{{ column.icon }}</span>{{ column.label }}</span>
+                        <span class="board-column-toggle-icon" aria-hidden="true">⌃</span>
+                    </button>
                     <p>{{ column.subtitle }}</p>
                 </div>
-                <span class="board-count">{{ column.count }}</span>
+                <div class="board-column-header-actions">
+                    <span class="board-count" data-board-count>{{ column.count }}</span>
+                    <span class="board-column-drag-label">可拖放</span>
+                </div>
             </header>
-            <div class="board-cards">
+            <div class="board-cards" id="board-column-cards-{{ column.accent }}" data-board-dropzone role="list" aria-label="{{ column.label }}任务">
                 {% for task in column.tasks %}
-                <article class="board-card {{ 'board-card-done' if task.status == column.key else '' }}">
+                <article class="board-card {{ 'board-card-done' if task.status == column.key else '' }}" draggable="true" data-board-card data-task-id="{{ task.id }}" data-board-status-url="{{ url_for('board.update_board_status', task_id=task.id, project_id=project_filter_key, response='json') }}" aria-label="{{ task.title }}" aria-grabbed="false" role="listitem" tabindex="0">
                     <div class="board-card-topline">
                         <span class="priority-{{ 'high' if task.priority.value == '高' else 'medium' if task.priority.value == '中' else 'low' }}">{{ '高优先级' if task.priority.value == '高' else '中优先级' if task.priority.value == '中' else '低优先级' }}</span>
-                        <span class="board-card-id">#{{ task.id }}</span>
+                        <span class="board-card-id">拖拽 · #{{ task.id }}</span>
                     </div>
                     <h3>{{ task.title }}</h3>
                     {% if task.description %}<p class="board-card-description">{{ task.description }}</p>{% endif %}
@@ -65,17 +75,44 @@
                             <button type="submit" class="btn btn-small">移动</button>
                         </form>
                         <a href="{{ url_for('edit_task', task_id=task.id) }}" class="board-edit-link">编辑</a>
+                        <button
+                            type="button"
+                            class="board-detail-link"
+                            data-task-detail
+                            data-task-id="{{ task.id }}"
+                            data-title="{{ task.title }}"
+                            data-priority="{{ task.priority.value }}优先级"
+                            data-priority-value="{{ task.priority.value }}"
+                            data-priority-class="{{ 'high' if task.priority.value == '高' else 'medium' if task.priority.value == '中' else 'low' }}"
+                            data-meta="{{ task.due_date.strftime('%m月%d日 %H:%M') if task.due_date else '暂无截止日期' }}"
+                            data-due-date="{{ task.due_date.strftime('%Y-%m-%dT%H:%M') if task.due_date else '' }}"
+                            data-tag="{{ task.tags[0] if task.tags else '未分类' }}"
+                            data-tags="{{ task.tags|join(', ') }}"
+                            data-project-id="{{ task.project_id if task.project_id is not none else '' }}"
+                            data-project="{{ project_names.get(task.project_id, '未归属项目') }}"
+                            data-status="{{ task.status.value }}"
+                            data-context="任务看板 · {{ column.label }}"
+                            data-description="{{ task.description or '暂无描述' }}"
+                            data-updated="{{ task.updated_at.strftime('%Y-%m-%d %H:%M') }}"
+                            data-edit-url="{{ url_for('edit_task', task_id=task.id) }}"
+                            data-update-url="{{ url_for('update_task', task_id=task.id, next=url_for('board.board_view', project_id=project_filter_key)) }}"
+                            aria-label="查看 {{ task.title }} 详情"
+                        >详情</button>
                     </div>
                 </article>
-                {% else %}
-                <div class="board-empty">
+                {% endfor %}
+                <div class="board-empty" data-board-empty {{ 'hidden' if column.tasks else '' }}>
                     <span>{{ column.icon }}</span>
                     <p>这里还没有任务</p>
+                    <small>拖拽任务到此处</small>
                 </div>
-                {% endfor %}
             </div>
         </article>
         {% endfor %}
     </section>
+    <p class="board-live-region sr-only" data-board-live aria-live="polite"></p>
 </div>
+{% include "_task_detail_drawer.html" %}
 {% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='board.js') }}"></script><script src="{{ url_for('static', filename='today.js') }}"></script>{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% set active_page = "reminders" %}
+{% block title %}提醒中心 - 任务管理系统{% endblock %}
+{% block eyebrow %}REMINDER CENTER{% endblock %}
+{% block page_title %}提醒中心{% endblock %}
+{% block page_subtitle %}把逾期和即将到期的任务集中处理，减少遗漏{% endblock %}
+{% block hero_action %}<a href="{{ url_for('today.today_page') }}" class="btn btn-primary">打开 Today</a>{% endblock %}
+{% block content %}
+<div class="reminder-layout">
+    <section class="reminder-summary-grid" aria-label="提醒摘要">
+        <article class="reminder-summary-card reminder-summary-total">
+            <span class="reminder-summary-icon">◷</span>
+            <div><span>待处理提醒</span><strong>{{ total }}</strong><small>当前未完成任务</small></div>
+        </article>
+        <article class="reminder-summary-card reminder-summary-overdue">
+            <span class="reminder-summary-icon">!</span>
+            <div><span>已逾期</span><strong>{{ overdue_total }}</strong><small>需要优先处理</small></div>
+        </article>
+        <article class="reminder-summary-card reminder-summary-soon">
+            <span class="reminder-summary-icon">→</span>
+            <div><span>未来 {{ window_days }} 天</span><strong>{{ due_soon_total }}</strong><small>提前安排节奏</small></div>
+        </article>
+    </section>
+
+    <div class="reminder-main-grid">
+        <div class="reminder-section-list">
+            {% for section in sections %}
+            <section class="reminder-section panel">
+                <header class="reminder-section-header">
+                    <div>
+                        <span class="eyebrow">{{ section.eyebrow }}</span>
+                        <h2>{{ section.title }}</h2>
+                        <p>{{ section.subtitle }}</p>
+                    </div>
+                    <span class="reminder-section-count">{{ section.tasks|length }}</span>
+                </header>
+                <div class="reminder-task-list">
+                    {% for task in section.tasks %}
+                    <article class="reminder-task-card">
+                        <span class="reminder-task-marker reminder-task-marker-{{ section.accent }}" aria-hidden="true"></span>
+                        <div class="reminder-task-body">
+                            <div class="reminder-task-title-row">
+                                <h3>{{ task.title }}</h3>
+                                <span class="today-priority today-priority-{{ task.priority_class }}">{{ task.priority }}</span>
+                            </div>
+                            <p>{{ task.description }}</p>
+                            <div class="reminder-task-meta">
+                                <span class="chip">{{ task.meta }}</span>
+                                <span class="chip">{{ task.status }}</span>
+                                <span class="chip">{{ task.project }}</span>
+                                {% if task.tag != '未分类' %}<span class="chip">#{{ task.tag }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="reminder-task-actions">
+                            <form method="post" action="{{ task.toggle_url }}">
+                                <button type="submit" class="btn btn-success btn-small">完成</button>
+                            </form>
+                            <button
+                                type="button"
+                                class="btn btn-small reminder-detail-button"
+                                data-task-detail
+                                data-task-id="{{ task.id }}"
+                                data-title="{{ task.title }}"
+                                data-priority="{{ task.priority }}"
+                                data-priority-value="{{ task.priority_value }}"
+                                data-priority-class="{{ task.priority_class }}"
+                                data-meta="{{ task.meta }}"
+                                data-due-date="{{ task.due_date }}"
+                                data-tag="{{ task.tag }}"
+                                data-tags="{{ task.tags }}"
+                                data-project-id="{{ task.project_id }}"
+                                data-project="{{ task.project }}"
+                                data-status="{{ task.status }}"
+                                data-context="{{ task.context }}"
+                                data-description="{{ task.description }}"
+                                data-updated="{{ task.updated }}"
+                                data-edit-url="{{ task.edit_url }}"
+                                data-update-url="{{ task.update_url }}"
+                                aria-label="查看 {{ task.title }} 详情"
+                            >详情</button>
+                        </div>
+                    </article>
+                    {% else %}
+                    <div class="reminder-empty-state">
+                        <span>✓</span>
+                        <div><strong>这里很安静</strong><p>当前没有符合条件的未完成任务。</p></div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endfor %}
+        </div>
+
+        <aside class="reminder-aside">
+            <section class="reminder-info-card panel">
+                <span class="eyebrow">HOW IT WORKS</span>
+                <h2>只提醒真正需要处理的任务</h2>
+                <p>提醒中心复用任务的截止时间和状态，不新增数据字段。已完成、已归档和没有截止时间的任务不会出现在这里。</p>
+                <div class="reminder-rule-list">
+                    <div><span class="reminder-rule-icon">!</span><span><strong>已逾期</strong><small>截止时间早于当前时间</small></span></div>
+                    <div><span class="reminder-rule-icon">→</span><span><strong>未来 {{ window_days }} 天</strong><small>截止时间在提醒窗口内</small></span></div>
+                    <div><span class="reminder-rule-icon">✓</span><span><strong>完成即消失</strong><small>完成后不再占用提醒清单</small></span></div>
+                </div>
+            </section>
+            <section class="reminder-action-card panel">
+                <span class="eyebrow">NEXT STEP</span>
+                <h2>把提醒变成行动</h2>
+                <p>从最重要的一项开始，或回到 Today 重新安排今天的工作顺序。</p>
+                <a href="{{ url_for('today.today_page') }}" class="btn btn-primary">回到 Today</a>
+            </section>
+        </aside>
+    </div>
+</div>
+{% include "_task_detail_drawer.html" %}
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='today.js') }}"></script>{% endblock %}

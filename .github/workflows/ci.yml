@@ -1,0 +1,45 @@
+name: Flask task manager CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: task-manager/requirements.txt
+
+      - name: Install Python dependencies
+        working-directory: task-manager
+        run: python -m pip install -r requirements.txt
+
+      - name: Run Python tests
+        working-directory: task-manager
+        run: python -m pytest tests/ -q
+
+      - name: Check Python compilation
+        working-directory: task-manager
+        run: python -m compileall -q models storage commands routes web_app.py main.py
+
+      - name: Check JavaScript syntax
+        working-directory: task-manager
+        run: |
+          node --check static/search.js
+          node --check static/board.js
+          node --check static/today.js
+
+      - name: Check whitespace errors
+        run: git diff --check

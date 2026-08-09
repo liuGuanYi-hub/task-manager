@@ -9,7 +9,8 @@
     {% block head %}{% endblock %}
 </head>
 <body>
-    <main class="app-shell">
+    <a class="skip-link" href="#main-content">跳到主要内容</a>
+    <main class="app-shell" id="main-content" tabindex="-1">
         <section class="mac-window">
             <div class="window-bar" aria-hidden="true">
                 <span class="traffic traffic-red"></span>
@@ -34,22 +35,95 @@
                 </div>
             </header>
             <nav class="nav-pills" aria-label="主导航">
-                <a href="/" class="{{ 'active' if active_page == 'tasks' else '' }}">任务列表</a>
-                <a href="{{ url_for('today.today_page') }}" class="{{ 'active' if active_page == 'today' else '' }}">今日</a>
-                <a href="/new" class="{{ 'active' if active_page == 'new' else '' }}">新建任务</a>
-                <a href="/stats" class="{{ 'active' if active_page == 'stats' else '' }}">统计</a>
-                <a href="/calendar" class="{{ 'active' if active_page == 'calendar' else '' }}">日历</a>
-                <a href="/board" class="{{ 'active' if active_page == 'board' else '' }}">看板</a>
-                <a href="/views" class="{{ 'active' if active_page == 'views' else '' }}">保存视图</a>
-                <a href="/archive" class="{{ 'active' if active_page == 'archive' else '' }}">归档</a>
-                <a href="/projects" class="{{ 'active' if active_page == 'projects' else '' }}">项目</a>
-                <a href="/settings" class="{{ 'active' if active_page == 'settings' else '' }}">设置</a>
+                <a href="/" class="{{ 'active' if active_page == 'tasks' else '' }}" {% if active_page == 'tasks' %}aria-current="page"{% endif %}>任务列表</a>
+                <button type="button" class="nav-search-trigger" data-search-open aria-haspopup="dialog" aria-controls="global-search-panel">
+                    <span aria-hidden="true">⌕</span>
+                    <span>搜索</span>
+                    <kbd>/</kbd>
+                </button>
+                <a href="{{ url_for('today.today_page') }}" class="{{ 'active' if active_page == 'today' else '' }}" {% if active_page == 'today' %}aria-current="page"{% endif %}>今日</a>
+                <a href="{{ url_for('reminders.reminders_page') }}" class="{{ 'active' if active_page == 'reminders' else '' }}" {% if active_page == 'reminders' %}aria-current="page"{% endif %}>提醒</a>
+                <a href="/new" class="{{ 'active' if active_page == 'new' else '' }}" {% if active_page == 'new' %}aria-current="page"{% endif %}>新建任务</a>
+                <a href="/stats" class="{{ 'active' if active_page == 'stats' else '' }}" {% if active_page == 'stats' %}aria-current="page"{% endif %}>统计</a>
+                <a href="/calendar" class="{{ 'active' if active_page == 'calendar' else '' }}" {% if active_page == 'calendar' %}aria-current="page"{% endif %}>日历</a>
+                <a href="/board" class="{{ 'active' if active_page == 'board' else '' }}" {% if active_page == 'board' %}aria-current="page"{% endif %}>看板</a>
+                <a href="/views" class="{{ 'active' if active_page == 'views' else '' }}" {% if active_page == 'views' %}aria-current="page"{% endif %}>保存视图</a>
+                <a href="/archive" class="{{ 'active' if active_page == 'archive' else '' }}" {% if active_page == 'archive' %}aria-current="page"{% endif %}>归档</a>
+                <a href="/projects" class="{{ 'active' if active_page == 'projects' else '' }}" {% if active_page == 'projects' %}aria-current="page"{% endif %}>项目</a>
+                <a href="/settings" class="{{ 'active' if active_page == 'settings' else '' }}" {% if active_page == 'settings' %}aria-current="page"{% endif %}>设置</a>
             </nav>
             <div class="content-panel">
                 {% block content %}{% endblock %}
             </div>
         </section>
     </main>
+    <nav class="mobile-bottom-nav" aria-label="移动端快捷导航">
+        <a href="/" class="{{ 'active' if active_page == 'tasks' else '' }}" {% if active_page == 'tasks' %}aria-current="page"{% endif %}><span aria-hidden="true">▤</span><span>任务</span></a>
+        <a href="{{ url_for('today.today_page') }}" class="{{ 'active' if active_page == 'today' else '' }}" {% if active_page == 'today' %}aria-current="page"{% endif %}><span aria-hidden="true">◷</span><span>今日</span></a>
+        <a href="{{ url_for('new_task') }}" class="mobile-bottom-nav-create" aria-label="新建任务"><span aria-hidden="true">＋</span><span>新建</span></a>
+        <a href="{{ url_for('board.board_view') }}" class="{{ 'active' if active_page == 'board' else '' }}" {% if active_page == 'board' %}aria-current="page"{% endif %}><span aria-hidden="true">▦</span><span>看板</span></a>
+        <a href="{{ url_for('calendar.calendar_view') }}" class="{{ 'active' if active_page == 'calendar' else '' }}" {% if active_page == 'calendar' %}aria-current="page"{% endif %}><span aria-hidden="true">□</span><span>日历</span></a>
+    </nav>
+    <div class="search-layer" data-search-layer data-search-endpoint="{{ url_for('search.search_api') }}" hidden>
+        <div class="search-backdrop" data-search-close></div>
+        <section class="search-dialog" id="global-search-panel" role="dialog" aria-modal="true" aria-labelledby="global-search-title" tabindex="-1">
+            <header class="search-dialog-header">
+                <div>
+                    <span class="eyebrow search-eyebrow">COMMAND CENTER</span>
+                    <h2 id="global-search-title">搜索与快捷操作</h2>
+                    <p>搜索当前任务、项目和标签，结果来自现有存储。</p>
+                </div>
+                <button type="button" class="search-dialog-close" data-search-close aria-label="关闭搜索面板">×</button>
+            </header>
+            <div class="search-input-shell">
+                <span aria-hidden="true">⌕</span>
+                <label class="sr-only" for="global-search-input">搜索任务、项目或标签</label>
+                <input id="global-search-input" data-search-input type="search" placeholder="搜索任务、项目或标签…" autocomplete="off">
+                <kbd>Esc</kbd>
+            </div>
+            <div class="search-dialog-body">
+                <section class="search-section" aria-labelledby="search-results-title">
+                    <div class="search-section-heading">
+                        <h3 id="search-results-title">最近使用</h3>
+                        <span data-search-status>实时搜索</span>
+                    </div>
+                    <div class="search-results" data-search-results>
+                        <p class="search-loading" data-search-loading>正在加载真实任务…</p>
+                    </div>
+                    <p class="search-empty" data-search-empty hidden>没有匹配的任务、项目或标签。</p>
+                </section>
+                <section class="search-section" aria-labelledby="search-commands-title">
+                    <div class="search-section-heading">
+                        <h3 id="search-commands-title">快捷操作</h3>
+                        <span>快速入口</span>
+                    </div>
+                    <div class="search-command-list">
+                        <a href="{{ url_for('new_task') }}" class="search-command-row" data-search-command="n">
+                            <span><strong>＋</strong><span>新建任务</span></span><kbd>N</kbd>
+                        </a>
+                        <a href="{{ url_for('board.board_view') }}" class="search-command-row" data-search-command="b">
+                            <span><strong>▦</strong><span>打开看板</span></span><kbd>B</kbd>
+                        </a>
+                        <a href="{{ url_for('views.views_page') }}" class="search-command-row" data-search-command="v">
+                            <span><strong>☆</strong><span>打开保存视图</span></span><kbd>V</kbd>
+                        </a>
+                    </div>
+                    <div class="search-filter-preview">
+                        <span>筛选预览</span>
+                        <a href="{{ url_for('views.views_page') }}">我的任务</a>
+                        <a href="{{ url_for('reminders.reminders_page') }}">已逾期</a>
+                        <a href="{{ url_for('views.views_page', preset='week-due') }}">本周到期</a>
+                    </div>
+                </section>
+            </div>
+            <footer class="search-dialog-footer">
+                <span><kbd>/</kbd> 打开搜索</span>
+                <span><kbd>Esc</kbd> 关闭面板</span>
+                <span class="muted">输入关键词即可搜索当前数据</span>
+            </footer>
+        </section>
+    </div>
+    <script src="{{ url_for('static', filename='search.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

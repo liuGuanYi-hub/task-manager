@@ -6,15 +6,22 @@
 {% block hero_action %}<a href="{{ url_for('new_task') }}" class="btn btn-primary">新建任务</a>{% endblock %}
 {% block content %}
 <div class="view-layout">
+    <button type="button" class="mobile-filter-trigger" data-mobile-filter-open aria-controls="view-filter-panel" aria-expanded="false">
+        <span aria-hidden="true">☷</span><span>筛选任务</span><strong>{{ tasks|length }}</strong>
+    </button>
+    <div class="mobile-filter-backdrop" data-mobile-filter-close hidden></div>
     <div class="view-main">
-        <section class="view-filter-panel panel">
+        <section class="view-filter-panel panel" id="view-filter-panel" data-mobile-filter-panel>
             <div class="view-section-heading">
                 <div>
                     <span class="eyebrow view-eyebrow">SMART VIEWS</span>
                     <h2>组合筛选</h2>
                     <p class="muted">按项目、状态、优先级、标签和截止日期定位任务。</p>
                 </div>
-                <a href="{{ url_for('views.views_page') }}" class="btn">清除筛选</a>
+                <div class="view-filter-heading-actions">
+                    <a href="{{ url_for('views.views_page') }}" class="btn">清除筛选</a>
+                    <button type="button" class="mobile-filter-close" data-mobile-filter-close aria-label="关闭筛选面板">×</button>
+                </div>
             </div>
             <form method="GET" action="{{ url_for('views.views_page') }}" class="view-filter-form">
                 <div class="view-filter-grid">
@@ -150,3 +157,4 @@
     </aside>
 </div>
 {% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='mobile-filters.js') }}"></script>{% endblock %}

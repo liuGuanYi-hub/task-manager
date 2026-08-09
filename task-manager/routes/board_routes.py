@@ -1,7 +1,7 @@
 """WeKan 风格看板路由。"""
 from typing import Optional
 
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, jsonify, render_template, request, redirect, url_for
 
 from models.task import Status
 from storage.json_storage import ANY_PROJECT
@@ -70,6 +70,8 @@ def board_view():
         if storage.get_project_by_id(selected_project_id) is None:
             return "项目不存在", 404
 
+    projects = storage.get_projects()
+    project_names = {project.id: project.name for project in projects}
     tasks = storage.query(project_id=selected_project_id, sort_by="updated_at", reverse=True)
     tasks_by_status = {column["key"]: [] for column in BOARD_COLUMNS}
     for task in tasks:
@@ -90,7 +92,8 @@ def board_view():
     return render_template(
         "board.html",
         columns=columns,
-        projects=storage.get_projects(),
+        projects=projects,
+        project_names=project_names,
         selected_project=selected_project,
         project_filter_key=project_filter_key(selected_project_id),
         total_tasks=len(tasks),
@@ -119,4 +122,14 @@ def update_board_status(task_id: int):
 
     task.status = new_status
     storage.update(task)
+    if request.args.get("response") == "json":
+        return jsonify(
+            {
+                "data": {
+                    "id": task.id,
+                    "status": task.status.value,
+                    "project_id": task.project_id,
+                }
+            }
+        )
     return redirect(url_for("board.board_view", project_id=project_filter_key(selected_project_id)))

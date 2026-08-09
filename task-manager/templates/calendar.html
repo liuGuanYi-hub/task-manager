@@ -44,10 +44,38 @@
         <div id="taskList" class="task-list-modal"></div>
     </div>
 </div>
+{% include "_task_detail_drawer.html" %}
 {% endblock %}
 {% block scripts %}
 <script>
 const tasksByDate = {{ tasks_json | tojson }};
+function escapeHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (character) {
+        return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[character];
+    });
+}
+function taskDetailAttrs(task) {
+    return [
+        'data-task-detail',
+        `data-task-id="${escapeHtml(task.id)}"`,
+        `data-title="${escapeHtml(task.title)}"`,
+        `data-priority="${escapeHtml(task.priority)}优先级"`,
+        `data-priority-value="${escapeHtml(task.priority_value)}"`,
+        `data-priority-class="${escapeHtml(task.priority_class)}"`,
+        `data-meta="${escapeHtml(task.meta)}"`,
+        `data-due-date="${escapeHtml(task.due_date)}"`,
+        `data-tag="${escapeHtml(task.tag)}"`,
+        `data-tags="${escapeHtml(task.tags)}"`,
+        `data-project-id="${escapeHtml(task.project_id)}"`,
+        `data-project="${escapeHtml(task.project)}"`,
+        `data-status="${escapeHtml(task.status)}"`,
+        `data-context="${escapeHtml(task.context)}"`,
+        `data-description="${escapeHtml(task.description)}"`,
+        `data-updated="${escapeHtml(task.updated)}"`,
+        `data-edit-url="${escapeHtml(task.edit_url)}"`,
+        `data-update-url="${escapeHtml(task.update_url)}"`
+    ].join(' ');
+}
 function changeMonth(delta) {
     const url = new URL(window.location.href);
     const current = new Date(url.searchParams.get('date') || '{{ today }}');
@@ -65,10 +93,11 @@ function showDayTasks(date) {
         taskList.innerHTML = '<p class="muted" style="text-align:center;padding:40px;">暂无任务</p>';
     } else {
         taskList.innerHTML = tasks.map(task => `
-            <div class="task-item-modal ${task.status_class}">
-                <strong>${task.title}</strong>
-                <p class="muted" style="margin:6px 0;">${task.description || ''}</p>
-                <div class="task-meta"><span class="chip">${task.priority_icon} ${task.priority}</span><span class="chip">${task.status_icon} ${task.status}</span></div>
+            <div class="task-item-modal ${escapeHtml(task.status_class)}">
+                <strong>${escapeHtml(task.title)}</strong>
+                <p class="muted" style="margin:6px 0;">${escapeHtml(task.description)}</p>
+                <div class="task-meta"><span class="chip">${escapeHtml(task.priority_icon)} ${escapeHtml(task.priority)}</span><span class="chip">${escapeHtml(task.status_icon)} ${escapeHtml(task.status)}</span></div>
+                <button type="button" class="task-item-modal-detail" ${taskDetailAttrs(task)}>查看详情</button>
             </div>
         `).join('');
     }
@@ -81,4 +110,5 @@ document.getElementById('dayModal').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
 });
 </script>
+<script src="{{ url_for('static', filename='today.js') }}"></script>
 {% endblock %}

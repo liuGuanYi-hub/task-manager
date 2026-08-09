@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% set active_page = "" %}
+{% block title %}{{ status_code }} - 任务管理系统{% endblock %}
+{% block eyebrow %}TASK MANAGER / {{ status_code }}{% endblock %}
+{% block page_title %}{{ error_title }}{% endblock %}
+{% block page_subtitle %}{{ error_message }}{% endblock %}
+{% block hero_action %}<a href="{{ url_for('index') }}" class="btn btn-primary">回到任务列表</a>{% endblock %}
+{% block content %}
+<section class="error-page" aria-labelledby="error-page-title">
+    <div class="error-code" aria-hidden="true">{{ status_code }}</div>
+    <div class="error-copy">
+        <p class="eyebrow">SAFE RECOVERY</p>
+        <h2 id="error-page-title">先回到熟悉的工作台</h2>
+        <p class="muted">你的任务数据没有因为这次页面错误被删除。可以返回任务列表，或从顶部导航继续工作。</p>
+        <div class="error-actions">
+            <a href="{{ url_for('index') }}" class="btn btn-primary">打开任务列表</a>
+            <a href="{{ url_for('today.today_page') }}" class="btn">打开 Today</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
