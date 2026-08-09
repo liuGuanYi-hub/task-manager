@@ -81,6 +81,8 @@ def index():
         bulk_feedback = f"已批量完成 {bulk_count} 个任务。"
     elif bulk_action == "archive":
         bulk_feedback = f"已批量归档 {bulk_count} 个任务。"
+    elif bulk_action in {"priority", "project", "tags"}:
+        bulk_feedback = f"已批量更新 {bulk_count} 个任务。"
 
     task_data = []
     for task in tasks:
@@ -101,6 +103,7 @@ def index():
         in_progress=in_progress,
         done=done,
         bulk_feedback=bulk_feedback,
+        projects=storage.get_projects(),
     )
 
 
@@ -219,7 +222,7 @@ def toggle_task(task_id):
 
 @app.route("/tasks/bulk", methods=["POST"])
 def bulk_tasks():
-    """批量完成或归档任务，复用现有状态和归档语义。"""
+    """批量完成、归档或修改任务属性，复用现有存储语义。"""
     wants_json = request.is_json or "application/json" in request.headers.get("Accept", "")
     payload = request.get_json(silent=True) if request.is_json else request.form
     payload = payload if payload is not None and hasattr(payload, "get") else {}
@@ -236,12 +239,43 @@ def bulk_tasks():
         if task_id not in task_ids:
             task_ids.append(task_id)
 
-    if action not in {"complete", "archive"}:
+    if action not in {"complete", "archive", "priority", "project", "tags"}:
         error = {"code": "invalid_action", "message": "批量操作类型无效"}
         return (jsonify({"error": error}), 400) if wants_json else (error["message"], 400)
     if not task_ids:
         error = {"code": "empty_selection", "message": "请至少选择一个任务"}
         return (jsonify({"error": error}), 400) if wants_json else (error["message"], 400)
+
+    selected_priority = None
+    selected_project_id = None
+    selected_tags = None
+    if action == "priority":
+        try:
+            selected_priority = Priority(str(payload.get("priority", "")).strip())
+        except ValueError:
+            error = {"code": "invalid_priority", "message": "批量优先级无效"}
+            return (jsonify({"error": error}), 400) if wants_json else (error["message"], 400)
+    elif action == "project":
+        raw_project_id = payload.get("project_id")
+        if raw_project_id == "none" or (request.is_json and raw_project_id is None):
+            selected_project_id = None
+        else:
+            try:
+                selected_project_id = int(str(raw_project_id).strip())
+            except (TypeError, ValueError):
+                error = {"code": "invalid_project", "message": "请选择有效项目或清除项目"}
+                return (jsonify({"error": error}), 400) if wants_json else (error["message"], 400)
+            if storage.get_project_by_id(selected_project_id) is None:
+                error = {"code": "invalid_project", "message": "项目不存在"}
+                return (jsonify({"error": error}), 400) if wants_json else (error["message"], 400)
+    elif action == "tags":
+        raw_tags = payload.get("tags", [])
+        raw_tags = raw_tags if isinstance(raw_tags, list) else str(raw_tags).split(",")
+        selected_tags = []
+        for raw_tag in raw_tags:
+            tag = str(raw_tag).strip()
+            if tag and tag not in selected_tags:
+                selected_tags.append(tag)
 
     changed = 0
     for task_id in task_ids:
@@ -253,7 +287,20 @@ def bulk_tasks():
                 task.status = Status.DONE
                 storage.update(task)
             changed += 1
-        elif storage.archive(task_id):
+        elif action == "archive":
+            if storage.archive(task_id):
+                changed += 1
+        elif action == "priority":
+            task.priority = selected_priority
+            storage.update(task)
+            changed += 1
+        elif action == "project":
+            task.project_id = selected_project_id
+            storage.update(task)
+            changed += 1
+        elif action == "tags":
+            task.tags = selected_tags
+            storage.update(task)
             changed += 1
 
     if wants_json:

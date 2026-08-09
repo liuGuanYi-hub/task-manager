@@ -11,6 +11,7 @@
     var feedback = form.querySelector("[data-bulk-feedback]");
     var taskCheckboxes = Array.prototype.slice.call(document.querySelectorAll("[data-bulk-task]"));
     var submitButtons = Array.prototype.slice.call(form.querySelectorAll("[data-bulk-submit]"));
+    var valueFields = Array.prototype.slice.call(form.querySelectorAll("[data-bulk-value]"));
 
     function selectedTasks() {
         return taskCheckboxes.filter(function (checkbox) {
@@ -30,7 +31,9 @@
             selectAll.disabled = taskCheckboxes.length === 0;
         }
         submitButtons.forEach(function (button) {
-            button.disabled = selectedCount === 0;
+            var requiredField = button.dataset.bulkRequires;
+            var field = requiredField && form.querySelector('[data-bulk-value="' + requiredField + '"]');
+            button.disabled = selectedCount === 0 || Boolean(field && !field.value);
         });
     }
 
@@ -57,11 +60,29 @@
         });
     });
 
+    valueFields.forEach(function (field) {
+        field.addEventListener("change", function () {
+            showFeedback("");
+            render();
+        });
+        field.addEventListener("input", function () {
+            render();
+        });
+    });
+
     form.addEventListener("submit", function (event) {
         var selectedCount = selectedTasks().length;
         if (!selectedCount) {
             event.preventDefault();
             showFeedback("请先选择至少一个任务。");
+            render();
+            return;
+        }
+        var requiredField = event.submitter && event.submitter.dataset.bulkRequires;
+        var field = requiredField && form.querySelector('[data-bulk-value="' + requiredField + '"]');
+        if (field && !field.value) {
+            event.preventDefault();
+            showFeedback("请先选择要应用的" + (requiredField === "priority" ? "优先级" : "项目") + "。");
             render();
             return;
         }

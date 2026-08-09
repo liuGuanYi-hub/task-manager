@@ -752,11 +752,48 @@ body.search-open {
 
 .bulk-selection,
 .bulk-select-all,
-.bulk-actions {
+.bulk-actions,
+.bulk-edit-fields {
     display: flex;
     align-items: center;
     gap: 9px;
     flex-wrap: wrap;
+}
+
+.bulk-edit-fields {
+    flex: 1 1 100%;
+    align-items: end;
+}
+
+.bulk-edit-fields label {
+    display: grid;
+    gap: 5px;
+    min-width: 150px;
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+.bulk-edit-fields .bulk-tags-field {
+    flex: 1 1 220px;
+}
+
+.bulk-edit-fields select,
+.bulk-edit-fields input {
+    min-height: 36px;
+    padding: 7px 9px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--ink);
+    background: var(--control-surface);
+    outline: none;
+    font-size: 0.76rem;
+}
+
+.bulk-edit-fields select:focus,
+.bulk-edit-fields input:focus {
+    border-color: rgba(79, 124, 255, 0.64);
+    box-shadow: 0 0 0 4px rgba(79, 124, 255, 0.12);
 }
 
 .bulk-select-all,

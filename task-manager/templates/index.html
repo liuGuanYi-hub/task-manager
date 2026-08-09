@@ -26,9 +26,17 @@
                     <label class="bulk-select-all"><input type="checkbox" data-bulk-select-all aria-label="选择当前页面全部任务"><span>全选</span></label>
                     <span class="bulk-count" data-bulk-count>未选择任务</span>
                 </div>
+                <div class="bulk-edit-fields" aria-label="批量编辑属性">
+                    <label><span>优先级</span><select name="priority" data-bulk-value="priority"><option value="">选择优先级…</option><option value="高">高</option><option value="中">中</option><option value="低">低</option></select></label>
+                    <label><span>项目</span><select name="project_id" data-bulk-value="project"><option value="">选择项目…</option><option value="none">清除项目</option>{% for project in projects %}<option value="{{ project.id }}">{{ project.name }}</option>{% endfor %}</select></label>
+                    <label class="bulk-tags-field"><span>标签</span><input type="text" name="tags" data-bulk-value="tags" placeholder="用逗号分隔；留空可清除"></label>
+                </div>
                 <div class="bulk-actions">
                     <button type="submit" name="action" value="complete" class="btn btn-success" data-bulk-submit disabled>批量完成</button>
                     <button type="submit" name="action" value="archive" class="btn btn-danger" data-bulk-submit disabled>批量归档</button>
+                    <button type="submit" name="action" value="priority" class="btn" data-bulk-submit data-bulk-requires="priority" disabled>应用优先级</button>
+                    <button type="submit" name="action" value="project" class="btn" data-bulk-submit data-bulk-requires="project" disabled>应用项目</button>
+                    <button type="submit" name="action" value="tags" class="btn" data-bulk-submit disabled>应用标签</button>
                 </div>
                 <p class="bulk-inline-feedback" data-bulk-feedback role="status" aria-live="polite"></p>
             </form>
