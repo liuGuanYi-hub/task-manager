@@ -18,6 +18,20 @@ api_bp = Blueprint("api", __name__, url_prefix="/api/v1")
 DEFAULT_PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100
 API_TOKEN_ENV = "TASK_MANAGER_API_TOKEN"
+API_VERSION = "v1"
+
+_API_ENDPOINTS = [
+    {"method": "GET", "path": "/api/v1", "description": "查看 API 版本、认证和分页契约"},
+    {"method": "GET", "path": "/api/v1/health", "description": "查看服务健康状态和存储后端"},
+    {"method": "GET", "path": "/api/v1/tasks", "description": "分页查询任务"},
+    {"method": "POST", "path": "/api/v1/tasks", "description": "创建任务"},
+    {"method": "GET", "path": "/api/v1/tasks/<id>", "description": "查看任务"},
+    {"method": "PATCH", "path": "/api/v1/tasks/<id>", "description": "局部更新任务"},
+    {"method": "DELETE", "path": "/api/v1/tasks/<id>", "description": "归档任务"},
+    {"method": "GET", "path": "/api/v1/projects", "description": "分页查询项目"},
+    {"method": "POST", "path": "/api/v1/projects", "description": "创建项目"},
+    {"method": "GET", "path": "/api/v1/projects/<id>", "description": "查看项目及其任务"},
+]
 
 
 class ApiInputError(ValueError):
@@ -39,7 +53,7 @@ def _auth_error():
 @api_bp.before_request
 def authenticate_api_request():
     """配置 API token 后保护除健康检查以外的所有 API。"""
-    if request.endpoint == "api.health":
+    if request.endpoint in {"api.api_index", "api.health"}:
         return None
 
     configured_token = os.getenv(API_TOKEN_ENV, "").strip()
@@ -182,6 +196,33 @@ def _paginate(items, page: int, page_size: int):
 @api_bp.errorhandler(ApiInputError)
 def handle_api_input_error(error):
     return _error(str(error))
+
+
+@api_bp.route("")
+@api_bp.route("/")
+def api_index():
+    """返回客户端可读取的 API 版本和能力发现信息。"""
+    return jsonify(
+        {
+            "data": {
+                "name": "Task Manager API",
+                "version": API_VERSION,
+                "base_path": "/api/v1",
+                "documentation": "docs/API.md",
+                "authentication": {
+                    "type": "bearer",
+                    "environment_variable": API_TOKEN_ENV,
+                    "public_endpoints": ["/api/v1", "/api/v1/health"],
+                },
+                "pagination": {
+                    "default_page_size": DEFAULT_PAGE_SIZE,
+                    "max_page_size": MAX_PAGE_SIZE,
+                    "parameters": ["page", "page_size"],
+                },
+                "endpoints": _API_ENDPOINTS,
+            }
+        }
+    )
 
 
 @api_bp.route("/health")

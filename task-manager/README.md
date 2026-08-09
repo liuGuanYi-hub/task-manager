@@ -175,6 +175,8 @@ python main.py migrate-sqlite tasks.json --sqlite-path tasks.db
 
 REST API 基础路径为 `/api/v1`：
 
+访问 `/api/v1` 可以查看当前 API 版本、认证要求、分页限制和端点发现信息；完整请求体、筛选参数和错误响应请参阅 [`docs/API.md`](docs/API.md)。
+
 | 方法 | 路径 | 用途 |
 |---|---|---|
 | GET | `/health` | 查看 API 和当前存储后端状态 |
