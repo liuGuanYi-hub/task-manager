@@ -515,6 +515,45 @@ class JSONStorage:
             "conflict": conflict,
         }
 
+    def preview_import(self, payload: Any, conflict: str = "remap") -> dict:
+        """只读预览导入结果，复用正式导入逻辑但不写入当前文件。"""
+        current_ids = {
+            "tasks": {task.id for task in self.tasks if task.id is not None},
+            "projects": {project.id for project in self.projects if project.id is not None},
+            "saved_views": {view.id for view in self.saved_views if view.id is not None},
+        }
+        incoming_counts = {}
+        conflicts = {}
+        if isinstance(payload, dict):
+            for key in ("tasks", "projects", "saved_views"):
+                records = payload.get(key, [])
+                records = records if isinstance(records, list) else []
+                incoming_counts[key] = len(records)
+                incoming_ids = {
+                    record.get("id")
+                    for record in records
+                    if isinstance(record, dict) and record.get("id") is not None
+                }
+                conflicts[key] = len(incoming_ids & current_ids[key])
+
+        preview_storage = copy.deepcopy(self)
+        preview_storage._save = lambda: None
+        result = preview_storage.import_payload(payload, conflict=conflict)
+        result["preview"] = True
+        result["incoming"] = incoming_counts
+        result["conflicts"] = conflicts
+        result["current"] = {
+            "tasks": len(self.tasks),
+            "projects": len(self.projects),
+            "saved_views": len(self.saved_views),
+        }
+        result["after"] = {
+            "tasks": len(preview_storage.tasks),
+            "projects": len(preview_storage.projects),
+            "saved_views": len(preview_storage.saved_views),
+        }
+        return result
+
     def archive(self, task_id: int) -> bool:
         """归档任务，保留数据但从默认列表隐藏。"""
         task = self.get_by_id(task_id)

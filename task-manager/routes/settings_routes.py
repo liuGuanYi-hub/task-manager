@@ -1,5 +1,5 @@
 """设置页面路由"""
-from flask import Blueprint, render_template, request, send_file, url_for
+from flask import Blueprint, redirect, render_template, request, send_file, url_for
 from storage.json_storage import ImportValidationError
 from storage.factory import create_storage as JSONStorage
 import csv
@@ -11,7 +11,7 @@ from pathlib import Path
 settings_bp = Blueprint("settings", __name__, url_prefix="/settings")
 
 
-def _render_settings(storage: JSONStorage, import_error=None, import_success=None):
+def _render_settings(storage: JSONStorage, import_error=None, import_success=None, import_preview=None):
     """构造设置页面，统一展示数据和导入结果。"""
     db_path = Path(storage.db_path)
     if db_path.exists():
@@ -30,6 +30,7 @@ def _render_settings(storage: JSONStorage, import_error=None, import_success=Non
         last_modified=last_modified,
         import_error=import_error,
         import_success=import_success,
+        import_preview=import_preview,
     )
 
 
@@ -39,6 +40,7 @@ def settings_page():
     return _render_settings(
         JSONStorage(),
         import_success=request.args.get("imported"),
+        import_preview=None,
     )
 
 
@@ -130,7 +132,11 @@ def import_data():
         return _render_settings(storage, import_error="导入文件不是有效的 UTF-8 JSON"), 400
 
     conflict = request.form.get("conflict", "remap")
+    mode = request.form.get("mode", "import")
     try:
+        if mode == "preview":
+            result = storage.preview_import(payload, conflict=conflict)
+            return _render_settings(storage, import_preview=result)
         result = storage.import_payload(payload, conflict=conflict)
     except ImportValidationError as exc:
         return _render_settings(storage, import_error=str(exc)), 400

@@ -6,6 +6,18 @@
 {% block content %}
 {% if import_error %}<div class="notice notice-error">{{ import_error }}</div>{% endif %}
 {% if import_success %}<div class="notice notice-success">{{ import_success }}</div>{% endif %}
+{% if import_preview %}
+<section class="import-preview" role="status" aria-live="polite">
+    <div class="import-preview-heading"><div><span class="eyebrow">IMPORT PREVIEW</span><h2>导入预览（未写入）</h2></div><span class="chip">策略：{{ import_preview.conflict }}</span></div>
+    <p class="muted">以下统计来自完整校验和冲突模拟，当前数据文件没有被修改。确认写入时请重新选择同一文件。</p>
+    <div class="import-preview-grid">
+        <div><span>任务</span><strong>{{ import_preview.incoming.tasks }}</strong><small>冲突 {{ import_preview.conflicts.tasks }} · 导入后 {{ import_preview.after.tasks }}</small></div>
+        <div><span>项目</span><strong>{{ import_preview.incoming.projects }}</strong><small>冲突 {{ import_preview.conflicts.projects }} · 导入后 {{ import_preview.after.projects }}</small></div>
+        <div><span>保存视图</span><strong>{{ import_preview.incoming.saved_views }}</strong><small>冲突 {{ import_preview.conflicts.saved_views }} · 导入后 {{ import_preview.after.saved_views }}</small></div>
+    </div>
+    <div class="import-preview-summary"><span>跳过任务 {{ import_preview.skipped_tasks }}</span><span>重映射任务 {{ import_preview.remapped_tasks }}</span><span>跳过项目 {{ import_preview.skipped_projects }}</span><span>跳过视图 {{ import_preview.skipped_views }}</span></div>
+</section>
+{% endif %}
 <section class="settings-section">
     <h2>外观设置</h2>
     <div class="setting-item">
@@ -53,9 +65,9 @@
                 <option value="skip">冲突时跳过导入记录</option>
                 <option value="replace">冲突时覆盖同 ID 记录</option>
             </select>
-            <button type="submit" class="btn btn-warning">校验并导入</button>
+            <div class="import-actions"><button type="submit" name="mode" value="preview" class="btn">先预览</button><button type="submit" name="mode" value="import" class="btn btn-warning">确认写入</button></div>
         </form>
-        <p class="muted import-help">导入会先完整校验 JSON；校验失败不会修改现有数据。默认策略会为冲突 ID 重映射。</p>
+        <p class="muted import-help">导入会先完整校验 JSON；预览和校验失败都不会修改现有数据。默认策略会为冲突 ID 重映射。</p>
     </div>
     <div class="panel" style="padding: 14px;">
         <div class="stat-row"><span>总任务数</span><strong>{{ total_tasks }}</strong></div>

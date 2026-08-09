@@ -2199,6 +2199,66 @@ body.search-open {
     background: rgba(34, 197, 94, 0.12);
 }
 
+.import-preview {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    margin-bottom: 18px;
+    border: 1px solid rgba(79, 124, 255, 0.28);
+    border-radius: var(--radius-md);
+    background: rgba(79, 124, 255, 0.08);
+}
+
+.import-preview-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.import-preview-heading h2 {
+    margin: 4px 0 0;
+    font-size: 1rem;
+}
+
+.import-preview > p {
+    margin: 0;
+    font-size: 0.82rem;
+}
+
+.import-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.import-preview-grid > div {
+    display: grid;
+    gap: 4px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+}
+
+.import-preview-grid span,
+.import-preview-grid small,
+.import-preview-summary {
+    color: var(--muted);
+    font-size: 0.72rem;
+}
+
+.import-preview-grid strong {
+    color: var(--blue);
+    font-size: 1.4rem;
+}
+
+.import-preview-summary {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
 .setting-item-column {
     align-items: flex-start;
     flex-direction: column;
@@ -2220,6 +2280,12 @@ body.search-open {
     border-radius: 12px;
     color: var(--ink);
     background: var(--control-surface);
+}
+
+.import-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .import-help {
@@ -2458,6 +2524,15 @@ body.search-open {
     .import-form input[type="file"],
     .import-form select,
     .import-form .btn {
+        width: 100%;
+    }
+
+    .import-preview-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .import-actions,
+    .import-actions .btn {
         width: 100%;
     }
 
