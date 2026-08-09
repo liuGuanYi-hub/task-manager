@@ -20,6 +20,7 @@ def test_settings_page_renders_conflict_guide_and_recovery_drill(tmp_path, monke
     assert 'data-recovery-step="backup"' in body
     assert 'data-recovery-step="verify"' in body
     assert 'settings.js' in body
+    assert 'rel="icon" href="data:,"' in body
     assert "仅保存在当前浏览器" in body
 
 

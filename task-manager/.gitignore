@@ -45,6 +45,9 @@ test_tasks.json
 # Logs
 *.log
 
+# Browser verification artifacts
+output/playwright/
+
 # Environment variables
 .env
 .env.local
