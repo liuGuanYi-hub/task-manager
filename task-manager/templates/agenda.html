@@ -27,6 +27,7 @@ data-update-url="{{ item.update_url }}"
 data-agenda-task
 data-agenda-date="{{ item.date }}"
 data-agenda-reschedule-url="{{ item.reschedule_url }}"
+data-agenda-time-period="{{ item.time_period }}"
 {%- endmacro %}
 {% macro agenda_task(item, compact=false) -%}
 <button type="button" class="agenda-task {{ 'agenda-task-compact' if compact else '' }} {{ 'agenda-task-done' if item.task.status.value == '已完成' else '' }}" aria-label="查看 {{ item.task.title }} 详情；聚焦后按 R 改期" aria-describedby="agenda-keyboard-help" draggable="{{ 'true' if item.date else 'false' }}" {{ task_attributes(item) }}>
@@ -52,12 +53,12 @@ data-agenda-reschedule-url="{{ item.reschedule_url }}"
         </div>
         <div class="agenda-toolbar-actions">
             <div class="agenda-date-nav" aria-label="切换日程范围">
-                <a class="btn" href="{{ url_for('agenda.agenda_view', date=previous_date, date_filter=date_filter, density=density_filter) }}" aria-label="上一周">←</a>
-                <a class="btn btn-primary" href="{{ url_for('agenda.agenda_view', date=today_date, date_filter=date_filter, density=density_filter) }}">回到今天</a>
-                <a class="btn" href="{{ url_for('agenda.agenda_view', date=next_date, date_filter=date_filter, density=density_filter) }}" aria-label="下一周">→</a>
+                <a class="btn" href="{{ url_for('agenda.agenda_view', date=previous_date, date_filter=date_filter, density=density_filter, period=period_filter) }}" aria-label="上一周">←</a>
+                <a class="btn btn-primary" href="{{ url_for('agenda.agenda_view', date=today_date, date_filter=date_filter, density=density_filter, period=period_filter) }}">回到今天</a>
+                <a class="btn" href="{{ url_for('agenda.agenda_view', date=next_date, date_filter=date_filter, density=density_filter, period=period_filter) }}" aria-label="下一周">→</a>
             </div>
             <div class="agenda-view-tabs" aria-label="规划视图">
-                <a class="active" href="{{ url_for('agenda.agenda_view', date=selected_date) }}">日程</a>
+                <a class="active" href="{{ url_for('agenda.agenda_view', date=selected_date, date_filter=date_filter, density=density_filter, period=period_filter) }}">日程</a>
                 <a href="{{ url_for('calendar.calendar_week_view', date=selected_date) }}">周视图</a>
                 <a href="{{ url_for('calendar.calendar_view', date=selected_date) }}">月视图</a>
             </div>
@@ -74,9 +75,14 @@ data-agenda-reschedule-url="{{ item.reschedule_url }}"
                 <option value="{{ value }}" {{ 'selected' if density_filter == value else '' }}>{{ label }}</option>
                 {% endfor %}
             </select></label>
+            <label><span>时间段</span><select name="period">
+                {% for value, label in {'all': '全部时间段', 'late': '深夜 · 00:00–06:00', 'morning': '上午 · 06:00–12:00', 'afternoon': '下午 · 12:00–18:00', 'evening': '晚上 · 18:00–24:00'}.items() %}
+                <option value="{{ value }}" {{ 'selected' if period_filter == value else '' }}>{{ label }}</option>
+                {% endfor %}
+            </select></label>
             <button type="submit" class="btn btn-primary">应用筛选</button>
         </form>
-        <p class="agenda-filter-feedback" data-agenda-feedback role="status" aria-live="polite">当前：{{ date_filter_label }} · {{ density_filter_label }}；可拖动任务到其他日期。</p>
+        <p class="agenda-filter-feedback" data-agenda-feedback role="status" aria-live="polite">当前：{{ date_filter_label }} · {{ density_filter_label }} · {{ period_filter_label }}；可拖动任务到其他日期。</p>
         <p class="agenda-keyboard-help" id="agenda-keyboard-help">键盘：聚焦任务后按 R，左右键选择日期，Enter 保存，Esc 取消。</p>
     </section>
 
@@ -111,15 +117,22 @@ data-agenda-reschedule-url="{{ item.reschedule_url }}"
             <section class="agenda-section {{ 'agenda-today-section' if group.is_today else '' }}" data-agenda-day="{{ group.date }}">
                 <div class="agenda-day-heading">
                     <div class="agenda-day-marker {{ 'is-today' if group.is_today else '' }}"><strong>{{ group.title }}</strong><span>{{ group.label }}</span></div>
-                    <div><h2>{{ '今天' if group.is_today else group.title + ' · ' + group.label }}</h2><span data-agenda-count>{{ group.tasks|length }} 项任务</span></div>
+                    <div><h2>{{ '今天' if group.is_today else group.title + ' · ' + group.label }}</h2><span data-agenda-count>{{ group.visible_count }} 项任务</span></div>
                 </div>
-                <div class="agenda-task-list" data-agenda-dropzone data-agenda-drop-date="{{ group.date }}">
-                {% if group.tasks %}
-                    {% for item in group.tasks %}{{ agenda_task(item) }}{% endfor %}
+                {% if group.periods %}
+                <div class="agenda-periods">
+                    {% for period in group.periods %}
+                    <section class="agenda-period-block" data-agenda-period-block="{{ period.key }}">
+                        <div class="agenda-period-heading"><span class="agenda-period-dot agenda-period-{{ period.key }}"></span><strong>{{ period.label }}</strong><span data-agenda-period-count>{{ period.tasks|length }} 项</span></div>
+                        <div class="agenda-task-list" data-agenda-dropzone data-agenda-drop-date="{{ group.date }}" data-agenda-drop-period="{{ period.key }}">
+                            {% for item in period.tasks %}{{ agenda_task(item) }}{% endfor %}
+                        </div>
+                    </section>
+                    {% endfor %}
+                </div>
                 {% else %}
-                <div class="agenda-empty-day" data-agenda-empty><span aria-hidden="true">✦</span><p>这一天还没有排期任务</p><a href="{{ url_for('new_task', next='/agenda/') }}">＋ 添加任务</a></div>
+                <div class="agenda-empty-day" data-agenda-empty data-agenda-dropzone data-agenda-drop-date="{{ group.date }}"><span aria-hidden="true">✦</span><p>这一天没有匹配的时间段任务</p><a href="{{ url_for('new_task', next='/agenda/') }}">＋ 添加任务</a></div>
                 {% endif %}
-                </div>
             </section>
             {% endfor %}
         </main>
@@ -129,7 +142,17 @@ data-agenda-reschedule-url="{{ item.reschedule_url }}"
                 <div class="agenda-side-heading"><div><span class="eyebrow agenda-eyebrow">UNPLANNED</span><h2>未安排</h2></div><strong>{{ unscheduled_tasks|length }}</strong></div>
                 <p class="muted">没有截止日期的任务先放在这里，打开详情即可快速安排。</p>
                 <div class="agenda-task-list agenda-task-list-compact">
-                    {% for item in unscheduled_tasks[:5] %}{{ agenda_task(item, true) }}{% else %}<div class="agenda-side-empty">暂无未安排任务</div>{% endfor %}
+                    {% for item in unscheduled_tasks[:5] %}
+                    <div class="agenda-unscheduled-item">
+                        {{ agenda_task(item, true) }}
+                        <div class="agenda-quick-schedule" aria-label="快速安排 {{ item.task.title }}">
+                            <span>快速安排</span>
+                            <button type="button" data-agenda-quick-date="{{ quick_dates.today }}" data-agenda-action-url="{{ item.action_url }}">今天</button>
+                            <button type="button" data-agenda-quick-date="{{ quick_dates.tomorrow }}" data-agenda-action-url="{{ item.action_url }}">明天</button>
+                            <button type="button" data-agenda-quick-date="{{ quick_dates.next_monday }}" data-agenda-action-url="{{ item.action_url }}">下周一</button>
+                        </div>
+                    </div>
+                    {% else %}<div class="agenda-side-empty">暂无未安排任务</div>{% endfor %}
                 </div>
                 {% if unscheduled_tasks|length > 5 %}<a class="agenda-side-link" href="{{ url_for('inbox.inbox_page') }}">查看全部收集箱任务 →</a>{% endif %}
             </section>{% endif %}

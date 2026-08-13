@@ -25,9 +25,12 @@
             var zoneCards = zone.querySelectorAll("[data-agenda-task]");
             var empty = zone.querySelector("[data-agenda-empty]");
             if (empty) empty.hidden = zoneCards.length > 0;
-            var section = zone.closest(".agenda-section");
-            var count = section && section.querySelector("[data-agenda-count]");
-            if (count) count.textContent = zoneCards.length + " 项任务";
+            var periodBlock = zone.closest("[data-agenda-period-block]");
+            var periodCount = periodBlock && periodBlock.querySelector("[data-agenda-period-count]");
+            if (periodCount) periodCount.textContent = zoneCards.length + " 项";
+            var daySection = zone.closest(".agenda-section");
+            var dayCount = daySection && daySection.querySelector("[data-agenda-count]");
+            if (dayCount) dayCount.textContent = daySection.querySelectorAll("[data-agenda-task]").length + " 项任务";
         }
 
         function clearDropHighlights() {
@@ -103,6 +106,48 @@
                     announce(error.message || "保存失败，任务已恢复原日期");
                     return false;
                 });
+        }
+
+        function handleQuickSchedule(event) {
+            var button = event.currentTarget;
+            var actionUrl = button.dataset.agendaActionUrl;
+            var targetDate = button.dataset.agendaQuickDate;
+            if (!actionUrl || !targetDate || button.disabled) return;
+            var group = button.closest(".agenda-unscheduled-item");
+            var controls = group ? Array.prototype.slice.call(group.querySelectorAll("[data-agenda-quick-date]")) : [button];
+            controls.forEach(function (item) { item.disabled = true; });
+            announce("正在安排到 " + targetDate + "…");
+            var body = new FormData();
+            body.append("action", "delay");
+            body.append("due_date", targetDate + "T09:00");
+            body.append("next", window.location.pathname + window.location.search);
+            fetch(actionUrl, {
+                method: "POST",
+                headers: { "Accept": "application/json" },
+                body: body
+            })
+                .then(function (response) {
+                    return response.json().then(function (payload) {
+                        if (!response.ok) {
+                            throw new Error(payload.error && payload.error.message ? payload.error.message : "快捷安排失败");
+                        }
+                        return payload;
+                    });
+                })
+                .then(function (payload) {
+                    announce(payload.data && payload.data.message ? payload.data.message : "已完成快捷安排");
+                    window.setTimeout(function () { window.location.reload(); }, 500);
+                })
+                .catch(function (error) {
+                    controls.forEach(function (item) { item.disabled = false; });
+                    announce(error.message || "快捷安排失败，请稍后重试");
+                });
+        }
+
+        function findKeyboardTargetZone(section, period) {
+            if (!section) return null;
+            var exact = section.querySelector('[data-agenda-dropzone][data-agenda-drop-period="' + period + '"]');
+            return exact || section.querySelector("[data-agenda-dropzone]");
         }
 
         function handleDragStart(event) {
@@ -232,7 +277,7 @@
                 moveKeyboardTarget(event.key === "ArrowLeft" ? -1 : 1);
             } else if (event.key === "Enter") {
                 event.preventDefault();
-                var targetZone = keyboardState.section.querySelector("[data-agenda-dropzone]");
+                var targetZone = findKeyboardTargetZone(keyboardState.section, card.dataset.agendaTimePeriod || "");
                 var state = keyboardState;
                 keyboardState = null;
                 card.classList.remove("is-agenda-keyboard-moving");
@@ -275,6 +320,9 @@
                 announce("已取消触控改期");
             });
             card.addEventListener("keydown", handleKeyboard);
+        });
+        root.querySelectorAll("[data-agenda-quick-date]").forEach(function (button) {
+            button.addEventListener("click", handleQuickSchedule);
         });
         dropzones.forEach(function (zone) {
             zone.addEventListener("dragover", handleDragOver);

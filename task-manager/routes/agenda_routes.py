@@ -22,6 +22,25 @@ DENSITY_FILTERS = {
     "busy": "高密度（3 项以上）",
     "empty": "空白日",
 }
+PERIOD_FILTERS = {
+    "all": "全部时间段",
+    "late": "深夜 · 00:00–06:00",
+    "morning": "上午 · 06:00–12:00",
+    "afternoon": "下午 · 12:00–18:00",
+    "evening": "晚上 · 18:00–24:00",
+}
+PERIOD_ORDER = ("late", "morning", "afternoon", "evening")
+
+
+def _time_period(due_date: datetime) -> str:
+    hour = due_date.hour
+    if hour < 6:
+        return "late"
+    if hour < 12:
+        return "morning"
+    if hour < 18:
+        return "afternoon"
+    return "evening"
 
 
 def _priority_rank(task) -> int:
@@ -54,6 +73,8 @@ def _task_item(task, project_names: dict[int, str], context: str):
         "update_url": url_for("update_task", task_id=task.id, next="/agenda/"),
         "date": due_date.date().isoformat() if due_date else "",
         "reschedule_url": url_for("calendar.reschedule_task", task_id=task.id) if due_date else "",
+        "time_period": _time_period(due_date) if due_date else "",
+        "time_period_label": PERIOD_FILTERS[_time_period(due_date)] if due_date else "待安排",
     }
 
 
@@ -104,6 +125,23 @@ def agenda_view():
     density_filter = request.args.get("density", "all").strip().lower()
     if density_filter not in DENSITY_FILTERS:
         density_filter = "all"
+    period_filter = request.args.get("period", "all").strip().lower()
+    if period_filter not in PERIOD_FILTERS:
+        period_filter = "all"
+
+    for group in all_day_groups:
+        grouped_periods = []
+        for period in PERIOD_ORDER:
+            period_tasks = [item for item in group["tasks"] if item["time_period"] == period]
+            if period_tasks:
+                grouped_periods.append(
+                    {
+                        "key": period,
+                        "label": PERIOD_FILTERS[period],
+                        "tasks": period_tasks,
+                    }
+                )
+        group["periods"] = grouped_periods
 
     if date_filter == "today":
         day_groups = [group for group in all_day_groups if group["date"] == selected_date.isoformat()]
@@ -113,6 +151,12 @@ def agenda_view():
         day_groups = list(all_day_groups)
     if density_filter != "all":
         day_groups = [group for group in day_groups if group["density"] == density_filter or (density_filter == "planned" and group["density"] == "busy")]
+    if period_filter != "all":
+        for group in day_groups:
+            group["periods"] = [period for period in group["periods"] if period["key"] == period_filter]
+        day_groups = [group for group in day_groups if group["periods"]]
+    for group in day_groups:
+        group["visible_count"] = sum(len(period["tasks"]) for period in group["periods"])
 
     overdue_tasks = _sort_tasks(
         [task for task in tasks if task.due_date and task.due_date.date() < selected_date and task.status != Status.DONE]
@@ -120,11 +164,21 @@ def agenda_view():
     unscheduled_tasks = _sort_tasks(
         [task for task in tasks if task.due_date is None and task.status != Status.DONE]
     )
-    planned_count = sum(len(group["tasks"]) for group in day_groups)
-    completed_count = sum(
-        1 for group in day_groups for item in group["tasks"] if item["task"].status == Status.DONE
-    )
+    visible_items = [
+        item
+        for group in day_groups
+        for period in group["periods"]
+        for item in period["tasks"]
+    ]
+    planned_count = len(visible_items)
+    completed_count = sum(1 for item in visible_items if item["task"].status == Status.DONE)
     range_end = selected_date + timedelta(days=6)
+    next_monday = today + timedelta(days=(7 - today.weekday()) or 7)
+    quick_dates = {
+        "today": today.isoformat(),
+        "tomorrow": (today + timedelta(days=1)).isoformat(),
+        "next_monday": next_monday.isoformat(),
+    }
 
     return render_template(
         "agenda.html",
@@ -144,6 +198,9 @@ def agenda_view():
         date_filter_label=DATE_FILTERS[date_filter],
         density_filter=density_filter,
         density_filter_label=DENSITY_FILTERS[density_filter],
+        period_filter=period_filter,
+        period_filter_label=PERIOD_FILTERS[period_filter],
+        quick_dates=quick_dates,
         show_overdue=date_filter in {"week", "overdue"},
         show_unscheduled=date_filter in {"week", "unscheduled"},
         projects=projects,

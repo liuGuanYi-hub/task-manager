@@ -4281,6 +4281,47 @@ body.search-open {
     background: rgba(79, 124, 255, 0.08);
 }
 
+.agenda-periods {
+    display: grid;
+    gap: 12px;
+}
+
+.agenda-period-block {
+    display: grid;
+    gap: 7px;
+}
+
+.agenda-period-heading {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 5px;
+    color: var(--muted);
+    font-size: 0.68rem;
+}
+
+.agenda-period-heading strong {
+    color: var(--subtle-ink);
+    font-size: 0.7rem;
+}
+
+.agenda-period-heading span:last-child {
+    margin-left: auto;
+    font-size: 0.64rem;
+}
+
+.agenda-period-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--blue);
+}
+
+.agenda-period-morning { background: #f59e0b; }
+.agenda-period-afternoon { background: #4f7cff; }
+.agenda-period-evening { background: #8b5cf6; }
+.agenda-period-late { background: #64748b; }
+
 .agenda-task {
     position: relative;
     display: grid;
@@ -4518,6 +4559,47 @@ body.search-open {
     color: var(--muted);
     font-size: 0.74rem;
     text-align: center;
+}
+
+.agenda-unscheduled-item {
+    display: grid;
+    gap: 6px;
+}
+
+.agenda-quick-schedule {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 5px 3px;
+}
+
+.agenda-quick-schedule span {
+    margin-right: auto;
+    color: var(--muted);
+    font-size: 0.62rem;
+}
+
+.agenda-quick-schedule button {
+    padding: 4px 7px;
+    border: 1px solid rgba(79, 124, 255, 0.2);
+    border-radius: 7px;
+    color: var(--blue);
+    background: rgba(79, 124, 255, 0.07);
+    cursor: pointer;
+    font-size: 0.62rem;
+    font-weight: 800;
+}
+
+.agenda-quick-schedule button:hover,
+.agenda-quick-schedule button:focus-visible {
+    border-color: rgba(79, 124, 255, 0.48);
+    background: rgba(79, 124, 255, 0.14);
+    outline: none;
+}
+
+.agenda-quick-schedule button:disabled {
+    cursor: wait;
+    opacity: 0.55;
 }
 
 .agenda-side-link {

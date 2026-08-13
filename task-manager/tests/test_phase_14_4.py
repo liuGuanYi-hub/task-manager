@@ -63,6 +63,54 @@ def test_agenda_unscheduled_filter_shows_inbox_queue(tmp_path, monkeypatch):
     assert unscheduled.title in body
     assert tomorrow.title not in body
     assert "未安排任务" in body
+    assert f'data-agenda-quick-date="{datetime.now().date().isoformat()}"' in body
+    assert f'data-agenda-quick-date="{(datetime.now().date() + timedelta(days=1)).isoformat()}"' in body
+    assert "下周一" in body
+    assert "快速安排" in body
+    assert f'data-agenda-action-url="/task/{unscheduled.id}/action"' in body
+
+
+def test_agenda_period_filter_groups_tasks_by_due_time(tmp_path, monkeypatch):
+    storage = JSONStorage(tmp_path / "tasks.json")
+    today = datetime.now().date()
+    period_tasks = [
+        storage.add(Task(title="Agenda 深夜任务", due_date=datetime.combine(today, datetime.min.time()).replace(hour=2))),
+        storage.add(Task(title="Agenda 上午任务", due_date=datetime.combine(today, datetime.min.time()).replace(hour=9))),
+        storage.add(Task(title="Agenda 下午任务", due_date=datetime.combine(today, datetime.min.time()).replace(hour=14))),
+        storage.add(Task(title="Agenda 晚上任务", due_date=datetime.combine(today, datetime.min.time()).replace(hour=20))),
+    ]
+    monkeypatch.setattr("routes.agenda_routes.JSONStorage", lambda: storage)
+    client = app.test_client()
+
+    response = client.get(f"/agenda/?date={today.isoformat()}&date_filter=today&period=morning")
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert period_tasks[1].title in body
+    assert period_tasks[0].title not in body
+    assert period_tasks[2].title not in body
+    assert period_tasks[3].title not in body
+    assert "上午 · 06:00–12:00" in body
+    assert 'data-agenda-drop-period="morning"' in body
+    assert 'data-agenda-count>1 项任务<' in body
+
+
+def test_agenda_quick_schedule_action_assigns_default_morning_slot(tmp_path, monkeypatch):
+    storage = JSONStorage(tmp_path / "tasks.json")
+    task = storage.add(Task(title="Agenda 快捷安排任务"))
+    monkeypatch.setattr("routes.task_actions.JSONStorage", lambda: storage)
+    client = app.test_client()
+    target_date = (datetime.now().date() + timedelta(days=1)).isoformat()
+
+    response = client.post(
+        f"/task/{task.id}/action",
+        data={"action": "delay", "due_date": target_date + "T09:00", "next": "/agenda/"},
+        headers={"Accept": "application/json"},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["data"]["message"] == "任务已改期"
+    assert storage.get_by_id(task.id).due_date.isoformat() == target_date + "T09:00:00"
 
 
 def test_agenda_task_exposes_reschedule_contract_and_calendar_endpoint_preserves_time(tmp_path, monkeypatch):
@@ -101,5 +149,9 @@ def test_agenda_client_contract_contains_touch_and_keyboard_recovery_paths():
     assert "event.key === \"ArrowRight\"" in script
     assert "event.key === \"Enter\"" in script
     assert "event.key === \"Escape\"" in script
+    assert "data-agenda-quick-date" in script
+    assert "handleQuickSchedule" in script
+    assert "due_date" in script
+    assert "findKeyboardTargetZone" in script
     assert "已取消触控改期" in script
     assert "任务仍在原日期" in script
