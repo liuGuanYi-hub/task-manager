@@ -1,5 +1,7 @@
 """阶段 11.6：统一动作撤销与错误回滚测试。"""
 
+from datetime import datetime, timedelta
+
 from models.task import Status, Task
 from storage.json_storage import JSONStorage
 from web_app import app
@@ -107,3 +109,29 @@ def test_action_update_failure_restores_in_memory_task_state(tmp_path, monkeypat
     assert response.status_code == 500
     assert response.get_json()["error"]["code"] == "update_failed"
     assert storage.get_by_id(task.id).status == Status.TODO
+
+
+def test_agenda_renders_real_week_timeline_and_unplanned_queue(tmp_path, monkeypatch):
+    storage = JSONStorage(tmp_path / "tasks.json")
+    today_task = storage.add(
+        Task(title="Agenda 今日任务", due_date=datetime.now().replace(hour=10, minute=0, second=0, microsecond=0))
+    )
+    tomorrow_task = storage.add(
+        Task(title="Agenda 明日任务", due_date=datetime.now().replace(hour=15, minute=30, second=0, microsecond=0) + timedelta(days=1))
+    )
+    inbox_task = storage.add(Task(title="Agenda 未安排任务"))
+    monkeypatch.setattr("web_app.storage", storage)
+    monkeypatch.setattr("routes.agenda_routes.JSONStorage", lambda: storage)
+
+    response = app.test_client().get("/agenda/")
+    body = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "日程 Agenda" in body
+    assert "EXECUTION WINDOW" in body
+    assert today_task.title in body
+    assert tomorrow_task.title in body
+    assert inbox_task.title in body
+    assert f'data-action-url="/task/{today_task.id}/action"' in body
+    assert "未安排" in body
+    assert 'src="/static/today.js"' in body

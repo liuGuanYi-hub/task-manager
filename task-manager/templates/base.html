@@ -47,6 +47,7 @@
                     <span class="nav-group-label">规划</span>
                     <a href="/board" class="{{ 'active' if active_page == 'board' else '' }}" {% if active_page == 'board' %}aria-current="page"{% endif %}>看板</a>
                     <a href="/calendar" class="{{ 'active' if active_page == 'calendar' else '' }}" {% if active_page == 'calendar' %}aria-current="page"{% endif %}>日历</a>
+                    <a href="{{ url_for('agenda.agenda_view') }}" class="{{ 'active' if active_page == 'agenda' else '' }}" {% if active_page == 'agenda' %}aria-current="page"{% endif %}>日程</a>
                     <a href="/views" class="{{ 'active' if active_page == 'views' else '' }}" {% if active_page == 'views' %}aria-current="page"{% endif %}>视图</a>
                     <a href="/projects" class="{{ 'active' if active_page == 'projects' else '' }}" {% if active_page == 'projects' %}aria-current="page"{% endif %}>项目</a>
                 </div>
@@ -98,6 +99,7 @@
             <div class="mobile-bottom-nav-menu">
                 <a href="{{ url_for('inbox.inbox_page') }}">收集箱</a>
                 <a href="{{ url_for('views.views_page') }}">保存视图</a>
+                <a href="{{ url_for('agenda.agenda_view') }}">日程</a>
                 <a href="{{ url_for('reminders.reminders_page') }}">提醒</a>
                 <a href="{{ url_for('projects.projects_list') }}">项目</a>
                 <a href="{{ url_for('stats.stats_dashboard') }}">统计</a>

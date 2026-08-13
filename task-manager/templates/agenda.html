@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% set active_page = "agenda" %}
+{% block title %}Agenda 日程 - 任务管理系统{% endblock %}
+{% block eyebrow %}AGENDA / TIMELINE{% endblock %}
+{% block page_title %}日程 Agenda{% endblock %}
+{% block page_subtitle %}把截止日期变成一条可以执行的工作时间线{% endblock %}
+{% macro task_attributes(item) -%}
+data-task-detail
+data-task-id="{{ item.task.id }}"
+data-action-url="{{ item.action_url }}"
+data-title="{{ item.task.title }}"
+data-priority="{{ item.task.priority.value }}优先级"
+data-priority-value="{{ item.task.priority.value }}"
+data-priority-class="{{ item.priority_class }}"
+data-meta="{{ item.meta }}"
+data-due-date="{{ item.task.due_date.strftime('%Y-%m-%dT%H:%M') if item.task.due_date else '' }}"
+data-tag="{{ item.tag }}"
+data-tags="{{ item.task.tags|join(', ') }}"
+data-project-id="{{ item.task.project_id or '' }}"
+data-project="{{ item.project }}"
+data-status="{{ item.task.status.value }}"
+data-context="{{ item.context }}"
+data-description="{{ item.task.description or '' }}"
+data-updated="{{ item.task.updated_at.strftime('%Y-%m-%d %H:%M') }}"
+data-edit-url="{{ item.edit_url }}"
+data-update-url="{{ item.update_url }}"
+{%- endmacro %}
+{% macro agenda_task(item, compact=false) -%}
+<button type="button" class="agenda-task {{ 'agenda-task-compact' if compact else '' }} {{ 'agenda-task-done' if item.task.status.value == '已完成' else '' }}" aria-label="查看 {{ item.task.title }} 详情" {{ task_attributes(item) }}>
+    <span class="agenda-task-time">{{ item.time_label }}</span>
+    <span class="agenda-task-body">
+        <strong class="agenda-task-title">{{ '✅ ' if item.task.status.value == '已完成' else '○ ' }}{{ item.task.title }}</strong>
+        <span class="agenda-task-meta">
+            <span class="agenda-chip agenda-chip-{{ item.priority_class }}">优先级 {{ item.task.priority.value }}</span>
+            <span>{{ item.project }}</span>
+            {% if item.task.tags %}<span>#{{ item.task.tags[0] }}</span>{% endif %}
+        </span>
+    </span>
+    <span class="agenda-task-arrow" aria-hidden="true">→</span>
+</button>
+{%- endmacro %}
+{% block content %}
+<div class="agenda-page" data-agenda-root>
+    <section class="agenda-toolbar panel">
+        <div>
+            <span class="eyebrow agenda-eyebrow">EXECUTION WINDOW</span>
+            <h2>{{ range_title }}</h2>
+            <p class="muted">以当前选中日期为起点，集中查看接下来七天的任务。</p>
+        </div>
+        <div class="agenda-toolbar-actions">
+            <div class="agenda-date-nav" aria-label="切换日程范围">
+                <a class="btn" href="{{ url_for('agenda.agenda_view', date=previous_date) }}" aria-label="上一周">←</a>
+                <a class="btn btn-primary" href="{{ url_for('agenda.agenda_view', date=today_date) }}">回到今天</a>
+                <a class="btn" href="{{ url_for('agenda.agenda_view', date=next_date) }}" aria-label="下一周">→</a>
+            </div>
+            <div class="agenda-view-tabs" aria-label="规划视图">
+                <a class="active" href="{{ url_for('agenda.agenda_view', date=selected_date) }}">日程</a>
+                <a href="{{ url_for('calendar.calendar_week_view', date=selected_date) }}">周视图</a>
+                <a href="{{ url_for('calendar.calendar_view', date=selected_date) }}">月视图</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="agenda-metrics" aria-label="日程摘要">
+        <article class="agenda-metric-card"><span>时间线任务</span><strong>{{ planned_count }}</strong><small>当前七天</small></article>
+        <article class="agenda-metric-card"><span>已完成</span><strong>{{ completed_count }}</strong><small>已排期任务</small></article>
+        <article class="agenda-metric-card agenda-metric-warning"><span>待处理逾期</span><strong>{{ overdue_count }}</strong><small>需要优先处理</small></article>
+    </section>
+
+    <div class="agenda-layout">
+        <main class="agenda-main" aria-label="七天日程时间线">
+            {% if overdue_tasks %}
+            <section class="agenda-section agenda-overdue-section">
+                <div class="agenda-section-heading">
+                    <div><span class="eyebrow agenda-eyebrow">OVERDUE</span><h2>待处理逾期</h2></div>
+                    <span>{{ overdue_tasks|length }} 项</span>
+                </div>
+                <div class="agenda-task-list agenda-task-list-warning">
+                    {% for item in overdue_tasks %}{{ agenda_task(item) }}{% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            {% for group in day_groups %}
+            <section class="agenda-section {{ 'agenda-today-section' if group.is_today else '' }}">
+                <div class="agenda-day-heading">
+                    <div class="agenda-day-marker {{ 'is-today' if group.is_today else '' }}"><strong>{{ group.title }}</strong><span>{{ group.label }}</span></div>
+                    <div><h2>{{ '今天' if group.is_today else group.title + ' · ' + group.label }}</h2><span>{{ group.tasks|length }} 项任务</span></div>
+                </div>
+                {% if group.tasks %}
+                <div class="agenda-task-list">
+                    {% for item in group.tasks %}{{ agenda_task(item) }}{% endfor %}
+                </div>
+                {% else %}
+                <div class="agenda-empty-day"><span aria-hidden="true">✦</span><p>这一天还没有排期任务</p><a href="{{ url_for('new_task', next='/agenda/') }}">＋ 添加任务</a></div>
+                {% endif %}
+            </section>
+            {% endfor %}
+        </main>
+
+        <aside class="agenda-sidebar" aria-label="日程辅助信息">
+            <section class="agenda-side-card panel">
+                <div class="agenda-side-heading"><div><span class="eyebrow agenda-eyebrow">UNPLANNED</span><h2>未安排</h2></div><strong>{{ unscheduled_tasks|length }}</strong></div>
+                <p class="muted">没有截止日期的任务先放在这里，打开详情即可快速安排。</p>
+                <div class="agenda-task-list agenda-task-list-compact">
+                    {% for item in unscheduled_tasks[:5] %}{{ agenda_task(item, true) }}{% else %}<div class="agenda-side-empty">暂无未安排任务</div>{% endfor %}
+                </div>
+                {% if unscheduled_tasks|length > 5 %}<a class="agenda-side-link" href="{{ url_for('inbox.inbox_page') }}">查看全部收集箱任务 →</a>{% endif %}
+            </section>
+            <section class="agenda-side-card agenda-next-step panel">
+                <span class="eyebrow agenda-eyebrow">NEXT STEP</span>
+                <h2>先完成一件最重要的事</h2>
+                <p>从高优先级任务开始，把时间线变成今天真正能推进的下一步。</p>
+                <a class="btn btn-primary" href="{{ url_for('today.today_page') }}">打开 Today 工作台</a>
+            </section>
+        </aside>
+    </div>
+</div>
+{% include "_task_detail_drawer.html" %}
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='today.js') }}"></script>{% endblock %}

@@ -6,6 +6,7 @@ from routes.stats_routes import stats_bp
 from routes.tags_routes import tags_bp
 from routes.weekly_routes import weekly_bp
 from routes.calendar_routes import calendar_bp
+from routes.agenda_routes import agenda_bp
 from routes.projects_routes import projects_bp
 from routes.board_routes import board_bp
 from routes.views_routes import views_bp
@@ -26,6 +27,7 @@ app.register_blueprint(stats_bp)
 app.register_blueprint(tags_bp)
 app.register_blueprint(weekly_bp)
 app.register_blueprint(calendar_bp)
+app.register_blueprint(agenda_bp)
 app.register_blueprint(projects_bp)
 app.register_blueprint(board_bp)
 app.register_blueprint(views_bp)
