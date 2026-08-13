@@ -89,6 +89,10 @@
                 <button type="submit" form="today-detail-form" class="btn btn-primary">保存更改</button>
                 <a id="today-detail-edit-link" class="btn btn-warning" href="#">完整编辑页</a>
             </div>
+            <div class="today-detail-undo" data-task-undo hidden>
+                <span data-task-undo-message>操作已保存</span>
+                <button type="button" class="btn btn-small" data-task-undo-button>撤销</button>
+            </div>
             <span id="today-detail-action-feedback" role="status" aria-live="polite">保存后返回当前工作台</span>
         </footer>
     </aside>

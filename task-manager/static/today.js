@@ -25,14 +25,54 @@
         var descriptionInput = document.getElementById("today-detail-description-input");
         var actionButtons = Array.prototype.slice.call(layer.querySelectorAll("[data-task-action]"));
         var actionFeedback = document.getElementById("today-detail-action-feedback");
+        var undoPanel = layer.querySelector("[data-task-undo]");
+        var undoButton = layer.querySelector("[data-task-undo-button]");
+        var undoMessage = layer.querySelector("[data-task-undo-message]");
         var lastTrigger = null;
         var closeTimer = null;
+        var reloadTimer = null;
+        var undoPayload = null;
 
         if (!layer || !drawer || !closeButton) {
             return;
         }
 
+        function clearReloadTimer() {
+            if (reloadTimer) {
+                window.clearTimeout(reloadTimer);
+                reloadTimer = null;
+            }
+        }
+
+        function resetUndoState() {
+            clearReloadTimer();
+            undoPayload = null;
+            if (undoPanel) undoPanel.hidden = true;
+            if (undoButton) undoButton.disabled = false;
+        }
+
+        async function sendAction(action, extra) {
+            var actionUrl = layer.dataset.actionUrl;
+            var formData = new FormData();
+            formData.append("action", action);
+            formData.append("next", window.location.pathname + window.location.search);
+            Object.keys(extra || {}).forEach(function (key) {
+                formData.append(key, extra[key]);
+            });
+            var response = await fetch(actionUrl, {
+                method: "POST",
+                headers: { "Accept": "application/json" },
+                body: formData
+            });
+            var payload = await response.json();
+            if (!response.ok) {
+                throw new Error(payload.error && payload.error.message ? payload.error.message : "任务操作失败");
+            }
+            return payload.data || {};
+        }
+
         function openDrawer(trigger) {
+            resetUndoState();
             lastTrigger = trigger;
             title.textContent = trigger.dataset.title || "任务详情";
             context.textContent = trigger.dataset.context || "Today 工作台";
@@ -68,6 +108,7 @@
                 }
             });
             actionFeedback.textContent = "保存后返回当前工作台";
+            if (undoMessage) undoMessage.textContent = "操作已保存";
 
             if (closeTimer) {
                 window.clearTimeout(closeTimer);
@@ -113,21 +154,17 @@
                 actionButtons.forEach(function (item) { item.disabled = true; });
                 button.classList.add("is-loading");
                 actionFeedback.textContent = "正在保存操作…";
-                var formData = new FormData();
-                formData.append("action", action);
-                formData.append("next", window.location.pathname + window.location.search);
                 try {
-                    var response = await fetch(actionUrl, {
-                        method: "POST",
-                        headers: { "Accept": "application/json" },
-                        body: formData
-                    });
-                    var payload = await response.json();
-                    if (!response.ok) {
-                        throw new Error(payload.error && payload.error.message ? payload.error.message : "任务操作失败");
+                    var data = await sendAction(action);
+                    actionFeedback.textContent = data.message || "操作已保存";
+                    undoPayload = data.undo || null;
+                    if (undoPayload && undoPanel) {
+                        undoPanel.hidden = false;
+                        if (undoMessage) undoMessage.textContent = (data.message || "操作已保存") + "，5 秒内可撤销";
+                        reloadTimer = window.setTimeout(function () { window.location.reload(); }, 5000);
+                    } else {
+                        reloadTimer = window.setTimeout(function () { window.location.reload(); }, 800);
                     }
-                    actionFeedback.textContent = payload.data.message || "操作已保存";
-                    window.setTimeout(function () { window.location.reload(); }, 280);
                 } catch (error) {
                     actionFeedback.textContent = error.message || "任务操作失败，请稍后重试";
                     actionButtons.forEach(function (item) { item.disabled = false; });
@@ -135,6 +172,29 @@
                 }
             });
         });
+
+        if (undoButton) {
+            undoButton.addEventListener("click", async function () {
+                if (!undoPayload || undoButton.disabled) return;
+                clearReloadTimer();
+                undoButton.disabled = true;
+                actionFeedback.textContent = "正在撤销…";
+                try {
+                    var data = await sendAction("undo", {
+                        snapshot: JSON.stringify(undoPayload.snapshot),
+                        expected: JSON.stringify(undoPayload.expected)
+                    });
+                    undoPayload = null;
+                    if (undoPanel) undoPanel.hidden = true;
+                    actionFeedback.textContent = data.message || "已撤销上一步操作";
+                    reloadTimer = window.setTimeout(function () { window.location.reload(); }, 700);
+                } catch (error) {
+                    actionFeedback.textContent = error.message || "撤销失败，请刷新后重试";
+                    undoButton.disabled = false;
+                    actionButtons.forEach(function (item) { item.disabled = false; });
+                }
+            });
+        }
 
         document.addEventListener("keydown", function (event) {
             if (event.key === "Escape" && !layer.hidden) {
