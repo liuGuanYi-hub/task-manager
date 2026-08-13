@@ -3,12 +3,20 @@
 {% block title %}{{ project.name }} - 项目管理{% endblock %}
 {% block page_title %}项目：{{ project.name }}{% endblock %}
 {% block page_subtitle %}查看项目任务和完成进度{% endblock %}
+{% block workspace_context %}项目工作区{% endblock %}
+{% block workspace_hint %}{{ project.name }} · 统一查看任务、进度与计划{% endblock %}
 {% block hero_action %}
 <a href="{{ url_for('projects.edit_project', project_id=project.id) }}" class="btn btn-warning">编辑项目</a>
 <a href="{{ url_for('projects.projects_list') }}" class="btn">返回项目列表</a>
 {% endblock %}
 {% block content %}
 <div class="content-stack">
+    <nav class="project-view-tabs" aria-label="项目视图切换">
+        <a class="active" aria-current="page" href="{{ url_for('projects.project_detail', project_id=project.id) }}">概览</a>
+        <a href="{{ url_for('views.views_page', project_id=project.id) }}">列表</a>
+        <a href="{{ url_for('board.board_view', project_id=project.id) }}">看板</a>
+        <a href="{{ url_for('calendar.calendar_view') }}">日历</a>
+    </nav>
     {% if project.description %}<section class="panel" style="padding: 22px;"><p class="muted">{{ project.description }}</p></section>{% endif %}
     <div class="stats-grid">
         <div class="stat-card"><div class="stat-label">总任务</div><div class="stat-number">{{ total }}</div></div>

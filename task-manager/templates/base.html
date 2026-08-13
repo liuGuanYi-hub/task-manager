@@ -35,24 +35,52 @@
                     </button>
                 </div>
             </header>
-            <nav class="nav-pills" aria-label="主导航">
-                <a href="/" class="{{ 'active' if active_page == 'tasks' else '' }}" {% if active_page == 'tasks' %}aria-current="page"{% endif %}>任务列表</a>
-                <button type="button" class="nav-search-trigger" data-search-open aria-haspopup="dialog" aria-controls="global-search-panel">
-                    <span aria-hidden="true">⌕</span>
-                    <span>搜索</span>
-                    <kbd>/</kbd>
-                </button>
-                <a href="{{ url_for('today.today_page') }}" class="{{ 'active' if active_page == 'today' else '' }}" {% if active_page == 'today' %}aria-current="page"{% endif %}>今日</a>
-                <a href="{{ url_for('reminders.reminders_page') }}" class="{{ 'active' if active_page == 'reminders' else '' }}" {% if active_page == 'reminders' %}aria-current="page"{% endif %}>提醒</a>
-                <a href="/new" class="{{ 'active' if active_page == 'new' else '' }}" {% if active_page == 'new' %}aria-current="page"{% endif %}>新建任务</a>
-                <a href="/stats" class="{{ 'active' if active_page == 'stats' else '' }}" {% if active_page == 'stats' %}aria-current="page"{% endif %}>统计</a>
-                <a href="/calendar" class="{{ 'active' if active_page == 'calendar' else '' }}" {% if active_page == 'calendar' %}aria-current="page"{% endif %}>日历</a>
-                <a href="/board" class="{{ 'active' if active_page == 'board' else '' }}" {% if active_page == 'board' %}aria-current="page"{% endif %}>看板</a>
-                <a href="/views" class="{{ 'active' if active_page == 'views' else '' }}" {% if active_page == 'views' %}aria-current="page"{% endif %}>保存视图</a>
-                <a href="/archive" class="{{ 'active' if active_page == 'archive' else '' }}" {% if active_page == 'archive' %}aria-current="page"{% endif %}>归档</a>
-                <a href="/projects" class="{{ 'active' if active_page == 'projects' else '' }}" {% if active_page == 'projects' %}aria-current="page"{% endif %}>项目</a>
-                <a href="/settings" class="{{ 'active' if active_page == 'settings' else '' }}" {% if active_page == 'settings' %}aria-current="page"{% endif %}>设置</a>
+            <nav class="nav-pills workspace-nav" aria-label="主导航">
+                <div class="nav-group nav-group-primary" aria-label="工作区">
+                    <span class="nav-group-label">工作区</span>
+                    <a href="/" class="{{ 'active' if active_page == 'tasks' else '' }}" {% if active_page == 'tasks' %}aria-current="page"{% endif %}>任务</a>
+                    <a href="{{ url_for('today.today_page') }}" class="{{ 'active' if active_page == 'today' else '' }}" {% if active_page == 'today' %}aria-current="page"{% endif %}>今日</a>
+                    <a href="{{ url_for('reminders.reminders_page') }}" class="{{ 'active' if active_page == 'reminders' else '' }}" {% if active_page == 'reminders' %}aria-current="page"{% endif %}>提醒</a>
+                </div>
+                <div class="nav-group nav-group-planning" aria-label="规划">
+                    <span class="nav-group-label">规划</span>
+                    <a href="/board" class="{{ 'active' if active_page == 'board' else '' }}" {% if active_page == 'board' %}aria-current="page"{% endif %}>看板</a>
+                    <a href="/calendar" class="{{ 'active' if active_page == 'calendar' else '' }}" {% if active_page == 'calendar' %}aria-current="page"{% endif %}>日历</a>
+                    <a href="/views" class="{{ 'active' if active_page == 'views' else '' }}" {% if active_page == 'views' %}aria-current="page"{% endif %}>视图</a>
+                    <a href="/projects" class="{{ 'active' if active_page == 'projects' else '' }}" {% if active_page == 'projects' %}aria-current="page"{% endif %}>项目</a>
+                </div>
+                <div class="nav-group nav-group-system" aria-label="管理">
+                    <span class="nav-group-label">管理</span>
+                    <a href="/stats" class="{{ 'active' if active_page == 'stats' else '' }}" {% if active_page == 'stats' %}aria-current="page"{% endif %}>统计</a>
+                    <a href="/archive" class="{{ 'active' if active_page == 'archive' else '' }}" {% if active_page == 'archive' %}aria-current="page"{% endif %}>归档</a>
+                    <a href="/settings" class="{{ 'active' if active_page == 'settings' else '' }}" {% if active_page == 'settings' %}aria-current="page"{% endif %}>设置</a>
+                </div>
             </nav>
+            <div class="workspace-toolbar" aria-label="工作区工具栏">
+                <div class="workspace-context">
+                    <span class="workspace-context-icon" aria-hidden="true">◈</span>
+                    <div>
+                        <strong>{% block workspace_context %}个人工作区{% endblock %}</strong>
+                        <span>{% block workspace_hint %}任务、项目与计划集中在这里{% endblock %}</span>
+                    </div>
+                </div>
+                <div class="workspace-toolbar-actions">
+                    <button type="button" class="nav-search-trigger workspace-search-trigger" data-search-open aria-haspopup="dialog" aria-controls="global-search-panel">
+                        <span aria-hidden="true">⌕</span>
+                        <span>搜索任务与项目</span>
+                        <kbd>/</kbd>
+                    </button>
+                    <details class="workspace-more">
+                        <summary><span aria-hidden="true">•••</span><span>更多</span></summary>
+                        <div class="workspace-more-menu">
+                            <a href="{{ url_for('new_task') }}"><span aria-hidden="true">＋</span>新建任务</a>
+                            <a href="{{ url_for('views.views_page') }}"><span aria-hidden="true">☆</span>保存视图</a>
+                            <a href="{{ url_for('stats.stats_dashboard') }}"><span aria-hidden="true">◒</span>统计</a>
+                            <a href="{{ url_for('archive.archived_tasks') }}"><span aria-hidden="true">▱</span>归档</a>
+                        </div>
+                    </details>
+                </div>
+            </div>
             <div class="content-panel">
                 {% block content %}{% endblock %}
             </div>
@@ -64,6 +92,17 @@
         <a href="{{ url_for('new_task') }}" class="mobile-bottom-nav-create" aria-label="新建任务"><span aria-hidden="true">＋</span><span>新建</span></a>
         <a href="{{ url_for('board.board_view') }}" class="{{ 'active' if active_page == 'board' else '' }}" {% if active_page == 'board' %}aria-current="page"{% endif %}><span aria-hidden="true">▦</span><span>看板</span></a>
         <a href="{{ url_for('calendar.calendar_view') }}" class="{{ 'active' if active_page == 'calendar' else '' }}" {% if active_page == 'calendar' %}aria-current="page"{% endif %}><span aria-hidden="true">□</span><span>日历</span></a>
+        <details class="mobile-bottom-nav-more">
+            <summary aria-label="打开更多导航"><span aria-hidden="true">•••</span><span>更多</span></summary>
+            <div class="mobile-bottom-nav-menu">
+                <a href="{{ url_for('views.views_page') }}">保存视图</a>
+                <a href="{{ url_for('reminders.reminders_page') }}">提醒</a>
+                <a href="{{ url_for('projects.projects_list') }}">项目</a>
+                <a href="{{ url_for('stats.stats_dashboard') }}">统计</a>
+                <a href="{{ url_for('archive.archived_tasks') }}">归档</a>
+                <a href="{{ url_for('settings.settings_page') }}">设置</a>
+            </div>
+        </details>
     </nav>
     <div class="search-layer" data-search-layer data-search-endpoint="{{ url_for('search.search_api') }}" hidden>
         <div class="search-backdrop" data-search-close></div>

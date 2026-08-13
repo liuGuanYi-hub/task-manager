@@ -860,6 +860,7 @@ body.search-open {
 }
 
 .task-info {
+    flex: 1 1 auto;
     min-width: 0;
 }
 
@@ -905,6 +906,10 @@ body.search-open {
     gap: 10px;
     flex-wrap: wrap;
     align-items: center;
+}
+
+.task-actions {
+    flex: 0 0 auto;
 }
 
 .btn {
@@ -4337,5 +4342,313 @@ html[data-theme="system"] .board-card-done {
 @media (prefers-reduced-motion: reduce) {
     .today-timer-progress span {
         transition: none;
+    }
+}
+
+/* 阶段 10.6：信息架构与统一视图 Shell */
+.workspace-nav {
+    align-items: center;
+    gap: 18px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+.nav-group {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 4px;
+    padding-left: 14px;
+    border-left: 1px solid var(--line);
+}
+
+.nav-group:first-child {
+    padding-left: 0;
+    border-left: 0;
+}
+
+.nav-group-label {
+    margin-right: 3px;
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.workspace-nav a {
+    padding: 8px 11px;
+    font-size: 0.86rem;
+}
+
+.workspace-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 13px 24px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface-soft);
+}
+
+.workspace-context,
+.workspace-toolbar-actions,
+.workspace-more summary,
+.workspace-more-menu a,
+.mobile-bottom-nav-more summary,
+.mobile-bottom-nav-menu a {
+    display: flex;
+    align-items: center;
+}
+
+.workspace-context {
+    min-width: 0;
+    gap: 10px;
+}
+
+.workspace-context-icon {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    place-items: center;
+    border: 1px solid rgba(79, 124, 255, 0.22);
+    border-radius: 11px;
+    color: var(--blue);
+    background: rgba(79, 124, 255, 0.10);
+}
+
+.workspace-context div {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+}
+
+.workspace-context strong,
+.workspace-context span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.workspace-context strong {
+    color: var(--subtle-ink);
+    font-size: 0.86rem;
+}
+
+.workspace-context div > span {
+    color: var(--muted);
+    font-size: 0.72rem;
+}
+
+.workspace-toolbar-actions {
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.workspace-search-trigger {
+    min-height: 36px;
+    padding: 7px 11px;
+    background: var(--control-surface);
+}
+
+.workspace-more {
+    position: relative;
+}
+
+.workspace-more summary,
+.mobile-bottom-nav-more summary {
+    gap: 7px;
+    min-height: 36px;
+    padding: 8px 11px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--nav-ink);
+    background: var(--control-surface);
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 800;
+    list-style: none;
+}
+
+.workspace-more summary::-webkit-details-marker,
+.mobile-bottom-nav-more summary::-webkit-details-marker {
+    display: none;
+}
+
+.workspace-more summary:hover,
+.workspace-more[open] summary {
+    border-color: rgba(79, 124, 255, 0.36);
+    color: var(--blue);
+}
+
+.workspace-more-menu {
+    position: absolute;
+    z-index: 12;
+    top: calc(100% + 8px);
+    right: 0;
+    display: grid;
+    min-width: 168px;
+    padding: 7px;
+    border: 1px solid var(--window-border);
+    border-radius: 15px;
+    background: var(--surface-strong);
+    box-shadow: var(--soft-shadow);
+    backdrop-filter: blur(22px);
+}
+
+.workspace-more-menu a {
+    gap: 8px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    color: var(--subtle-ink);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.workspace-more-menu a:hover {
+    color: var(--blue);
+    background: rgba(79, 124, 255, 0.10);
+}
+
+.project-view-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 5px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface-soft);
+}
+
+.project-view-tabs a {
+    padding: 9px 14px;
+    border-radius: 11px;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.project-view-tabs a:hover {
+    color: var(--blue);
+    background: var(--surface-strong);
+}
+
+.project-view-tabs a.active {
+    color: white;
+    background: linear-gradient(135deg, var(--blue), var(--violet));
+    box-shadow: 0 7px 18px rgba(79, 124, 255, 0.22);
+}
+
+.mobile-bottom-nav-more {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .workspace-nav {
+        gap: 10px;
+    }
+
+    .nav-group {
+        padding-left: 8px;
+    }
+
+    .nav-group-label {
+        display: none;
+    }
+}
+
+@media (max-width: 760px) {
+    .workspace-nav {
+        display: none;
+    }
+
+    .workspace-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 11px;
+        padding: 12px 16px;
+    }
+
+    .workspace-toolbar-actions {
+        justify-content: stretch;
+    }
+
+    .workspace-search-trigger {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    .workspace-more summary {
+        min-width: 76px;
+        justify-content: center;
+    }
+
+    .mobile-bottom-nav-more {
+        position: relative;
+        display: block;
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .mobile-bottom-nav-more summary {
+        display: grid;
+        min-height: 48px;
+        place-items: center;
+        align-content: center;
+        gap: 3px;
+        padding: 5px 2px;
+        border: 0;
+        border-radius: 14px;
+        color: var(--muted);
+        background: transparent;
+        font-size: 0.68rem;
+    }
+
+    .mobile-bottom-nav-more summary > span:first-child {
+        color: var(--subtle-ink);
+        font-size: 1.08rem;
+        line-height: 1;
+    }
+
+    .mobile-bottom-nav-more[open] summary {
+        color: var(--blue);
+        background: rgba(79, 124, 255, 0.12);
+    }
+
+    .mobile-bottom-nav-more[open] summary > span:first-child {
+        color: var(--blue);
+    }
+
+    .mobile-bottom-nav-menu {
+        position: absolute;
+        z-index: 15;
+        right: 0;
+        bottom: calc(100% + 10px);
+        display: grid;
+        min-width: 140px;
+        padding: 7px;
+        border: 1px solid var(--window-border);
+        border-radius: 15px;
+        background: var(--surface-strong);
+        box-shadow: var(--soft-shadow);
+        backdrop-filter: blur(22px);
+    }
+
+    .mobile-bottom-nav-menu a {
+        padding: 9px 10px;
+        border-radius: 10px;
+        color: var(--subtle-ink);
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .mobile-bottom-nav-menu a:hover {
+        color: var(--blue);
+        background: rgba(79, 124, 255, 0.10);
     }
 }

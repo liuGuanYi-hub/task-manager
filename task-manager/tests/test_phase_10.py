@@ -1,9 +1,17 @@
 """阶段 10.1：Today 工作台 UI 预览页面测试。"""
 
+from datetime import datetime
+
+from models.task import Task
+from storage.json_storage import JSONStorage
 from web_app import app
 
 
-def test_today_page_renders_ui_preview_sections_and_navigation():
+def test_today_page_renders_ui_preview_sections_and_navigation(tmp_path, monkeypatch):
+    storage = JSONStorage(tmp_path / "tasks.json")
+    storage.add(Task(title="Today 测试任务", due_date=datetime.now()))
+    monkeypatch.setattr("routes.today_routes.JSONStorage", lambda: storage)
+
     response = app.test_client().get("/today/")
     body = response.get_data(as_text=True)
 
