@@ -29,7 +29,7 @@ data-agenda-date="{{ item.date }}"
 data-agenda-reschedule-url="{{ item.reschedule_url }}"
 {%- endmacro %}
 {% macro agenda_task(item, compact=false) -%}
-<button type="button" class="agenda-task {{ 'agenda-task-compact' if compact else '' }} {{ 'agenda-task-done' if item.task.status.value == '已完成' else '' }}" aria-label="查看 {{ item.task.title }} 详情" draggable="{{ 'true' if item.date else 'false' }}" {{ task_attributes(item) }}>
+<button type="button" class="agenda-task {{ 'agenda-task-compact' if compact else '' }} {{ 'agenda-task-done' if item.task.status.value == '已完成' else '' }}" aria-label="查看 {{ item.task.title }} 详情；聚焦后按 R 改期" aria-describedby="agenda-keyboard-help" draggable="{{ 'true' if item.date else 'false' }}" {{ task_attributes(item) }}>
     <span class="agenda-task-time">{{ item.time_label }}</span>
     <span class="agenda-task-body">
         <strong class="agenda-task-title">{{ '✅ ' if item.task.status.value == '已完成' else '○ ' }}{{ item.task.title }}</strong>
@@ -77,6 +77,7 @@ data-agenda-reschedule-url="{{ item.reschedule_url }}"
             <button type="submit" class="btn btn-primary">应用筛选</button>
         </form>
         <p class="agenda-filter-feedback" data-agenda-feedback role="status" aria-live="polite">当前：{{ date_filter_label }} · {{ density_filter_label }}；可拖动任务到其他日期。</p>
+        <p class="agenda-keyboard-help" id="agenda-keyboard-help">键盘：聚焦任务后按 R，左右键选择日期，Enter 保存，Esc 取消。</p>
     </section>
 
     <section class="agenda-metrics" aria-label="日程摘要">

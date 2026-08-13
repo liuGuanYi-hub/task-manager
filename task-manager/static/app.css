@@ -4112,6 +4112,12 @@ body.search-open {
     font-size: 0.7rem;
 }
 
+.agenda-keyboard-help {
+    margin: -5px 0 0;
+    color: var(--muted);
+    font-size: 0.66rem;
+}
+
 .agenda-view-tabs {
     padding: 4px;
     border: 1px solid var(--line);
@@ -4330,6 +4336,43 @@ body.search-open {
     animation: agenda-task-shake 0.26s ease-in-out 2;
 }
 
+.agenda-task.is-agenda-touch-dragging,
+.agenda-task.is-agenda-keyboard-moving {
+    position: relative;
+    z-index: 2;
+    border-color: rgba(79, 124, 255, 0.58);
+    box-shadow: 0 14px 28px rgba(79, 124, 255, 0.18);
+    transform: scale(1.015);
+}
+
+.agenda-task.is-agenda-touch-dragging {
+    opacity: 0.82;
+}
+
+.agenda-task.is-agenda-keyboard-moving::after {
+    position: absolute;
+    right: 12px;
+    bottom: -25px;
+    padding: 4px 7px;
+    border-radius: 7px;
+    color: white;
+    background: var(--blue);
+    content: "← → 选日期 · Enter 保存 · Esc 取消";
+    font-size: 0.62rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.agenda-task.is-agenda-touch-target {
+    border-color: rgba(79, 124, 255, 0.52);
+    background: rgba(79, 124, 255, 0.12);
+}
+
+.agenda-section.is-agenda-keyboard-target {
+    border-color: rgba(79, 124, 255, 0.52);
+    box-shadow: 0 12px 26px rgba(79, 124, 255, 0.11);
+}
+
 @keyframes agenda-task-shake {
     25% { transform: translateX(-3px); }
     75% { transform: translateX(3px); }
@@ -4425,6 +4468,12 @@ body.search-open {
 
 .agenda-filter-empty strong {
     color: var(--subtle-ink);
+}
+
+@media (pointer: coarse) {
+    .agenda-task[draggable="true"] {
+        touch-action: pan-y;
+    }
 }
 
 .agenda-empty-day p {

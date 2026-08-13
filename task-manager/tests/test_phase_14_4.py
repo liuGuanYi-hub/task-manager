@@ -75,6 +75,8 @@ def test_agenda_task_exposes_reschedule_contract_and_calendar_endpoint_preserves
 
     task = today_tasks[0]
     assert f'data-agenda-reschedule-url="/calendar/task/{task.id}/reschedule"' in body
+    assert 'draggable="true"' in body
+    assert "键盘：聚焦任务后按 R" in body
     assert 'src="/static/agenda.js"' in body
 
     target_date = (datetime.now().date() + timedelta(days=4)).isoformat()
@@ -87,3 +89,17 @@ def test_agenda_task_exposes_reschedule_contract_and_calendar_endpoint_preserves
     assert response.status_code == 200
     assert storage.get_by_id(task.id).due_date.date().isoformat() == target_date
     assert storage.get_by_id(task.id).due_date.hour == 10
+
+
+def test_agenda_client_contract_contains_touch_and_keyboard_recovery_paths():
+    script = open("static/agenda.js", encoding="utf-8").read()
+
+    assert "touchstart" in script
+    assert "touchmove" in script
+    assert "touchend" in script
+    assert "event.key === \"ArrowLeft\"" in script
+    assert "event.key === \"ArrowRight\"" in script
+    assert "event.key === \"Enter\"" in script
+    assert "event.key === \"Escape\"" in script
+    assert "已取消触控改期" in script
+    assert "任务仍在原日期" in script
