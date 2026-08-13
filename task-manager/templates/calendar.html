@@ -59,6 +59,7 @@ function taskDetailAttrs(task) {
     return [
         'data-task-detail',
         `data-task-id="${escapeHtml(task.id)}"`,
+        `data-action-url="${escapeHtml(task.action_url)}"`,
         `data-title="${escapeHtml(task.title)}"`,
         `data-priority="${escapeHtml(task.priority)}优先级"`,
         `data-priority-value="${escapeHtml(task.priority_value)}"`,

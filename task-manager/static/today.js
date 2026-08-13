@@ -23,6 +23,8 @@
         var projectInput = document.getElementById("today-detail-project-input");
         var tagsInput = document.getElementById("today-detail-tags-input");
         var descriptionInput = document.getElementById("today-detail-description-input");
+        var actionButtons = Array.prototype.slice.call(layer.querySelectorAll("[data-task-action]"));
+        var actionFeedback = document.getElementById("today-detail-action-feedback");
         var lastTrigger = null;
         var closeTimer = null;
 
@@ -49,6 +51,7 @@
             updated.textContent = trigger.dataset.updated || "暂无更新时间";
             editLink.href = trigger.dataset.editUrl || "#";
             form.action = trigger.dataset.updateUrl || "#";
+            layer.dataset.actionUrl = trigger.dataset.actionUrl || "";
             titleInput.value = trigger.dataset.title || "";
             priorityInput.value = trigger.dataset.priorityValue || "中";
             statusInput.value = trigger.dataset.status || "待办";
@@ -56,6 +59,15 @@
             projectInput.value = trigger.dataset.projectId || "";
             tagsInput.value = trigger.dataset.tags || "";
             descriptionInput.value = trigger.dataset.description === "暂无描述" ? "" : (trigger.dataset.description || "");
+            actionButtons.forEach(function (button) {
+                button.disabled = !layer.dataset.actionUrl;
+                button.classList.remove("is-loading");
+                if (button.dataset.taskAction === "complete" || button.dataset.taskAction === "reopen") {
+                    button.dataset.taskAction = trigger.dataset.status === "已完成" ? "reopen" : "complete";
+                    button.textContent = trigger.dataset.status === "已完成" ? "恢复任务" : "完成";
+                }
+            });
+            actionFeedback.textContent = "保存后返回当前工作台";
 
             if (closeTimer) {
                 window.clearTimeout(closeTimer);
@@ -89,6 +101,39 @@
 
         layer.querySelectorAll("[data-today-drawer-close]").forEach(function (button) {
             button.addEventListener("click", closeDrawer);
+        });
+
+        actionButtons.forEach(function (button) {
+            button.addEventListener("click", async function () {
+                var actionUrl = layer.dataset.actionUrl;
+                var action = button.dataset.taskAction;
+                if (!actionUrl || !action || button.disabled) {
+                    return;
+                }
+                actionButtons.forEach(function (item) { item.disabled = true; });
+                button.classList.add("is-loading");
+                actionFeedback.textContent = "正在保存操作…";
+                var formData = new FormData();
+                formData.append("action", action);
+                formData.append("next", window.location.pathname + window.location.search);
+                try {
+                    var response = await fetch(actionUrl, {
+                        method: "POST",
+                        headers: { "Accept": "application/json" },
+                        body: formData
+                    });
+                    var payload = await response.json();
+                    if (!response.ok) {
+                        throw new Error(payload.error && payload.error.message ? payload.error.message : "任务操作失败");
+                    }
+                    actionFeedback.textContent = payload.data.message || "操作已保存";
+                    window.setTimeout(function () { window.location.reload(); }, 280);
+                } catch (error) {
+                    actionFeedback.textContent = error.message || "任务操作失败，请稍后重试";
+                    actionButtons.forEach(function (item) { item.disabled = false; });
+                    button.classList.remove("is-loading");
+                }
+            });
         });
 
         document.addEventListener("keydown", function (event) {

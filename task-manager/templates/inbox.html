@@ -96,6 +96,30 @@
                         <button type="submit" class="btn btn-{{ 'warning' if task.status.value == '已完成' else 'success' }}">{{ '恢复' if task.status.value == '已完成' else '完成' }}</button>
                     </form>
                     <a href="{{ url_for('edit_task', task_id=task.id) }}" class="btn btn-warning">编辑</a>
+                    <button
+                        type="button"
+                        class="btn"
+                        data-task-detail
+                        data-task-id="{{ task.id }}"
+                        data-action-url="{{ url_for('task_actions.task_action', task_id=task.id) }}"
+                        data-title="{{ task.title }}"
+                        data-priority="{{ task.priority.value }}优先级"
+                        data-priority-value="{{ task.priority.value }}"
+                        data-priority-class="{{ 'high' if task.priority.value == '高' else 'medium' if task.priority.value == '中' else 'low' }}"
+                        data-meta="暂无截止日期"
+                        data-due-date=""
+                        data-tag="{{ task.tags[0] if task.tags else '未分类' }}"
+                        data-tags="{{ task.tags|join(', ') }}"
+                        data-project-id="{{ task.project_id if task.project_id is not none else '' }}"
+                        data-project="{{ project_names.get(task.project_id, '未归属项目') }}"
+                        data-status="{{ task.status.value }}"
+                        data-context="收集箱"
+                        data-description="{{ task.description or '暂无描述' }}"
+                        data-updated="{{ task.updated_at.strftime('%Y-%m-%d %H:%M') }}"
+                        data-edit-url="{{ url_for('edit_task', task_id=task.id) }}"
+                        data-update-url="{{ url_for('update_task', task_id=task.id, next='/inbox/') }}"
+                        aria-label="查看 {{ task.title }} 详情"
+                    >详情</button>
                     <form method="post" action="{{ url_for('inbox.archive_inbox_task', task_id=task.id) }}">
                         <button type="submit" class="btn btn-danger">归档</button>
                     </form>
@@ -111,4 +135,6 @@
         </div>
     </section>
 </div>
+{% include "_task_detail_drawer.html" %}
 {% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='today.js') }}"></script>{% endblock %}

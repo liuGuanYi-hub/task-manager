@@ -22,6 +22,7 @@ def _week_task_payload(task: Task, project_names: dict[int, str], date_value: da
     """把周视图任务转换为详情抽屉可复用的 data 属性。"""
     return {
         "id": task.id,
+        "action_url": url_for("task_actions.task_action", task_id=task.id),
         "title": task.title,
         "description": task.description or "暂无描述",
         "priority": task.priority.value,
@@ -97,6 +98,7 @@ def calendar_view():
         tasks_json[date_str] = [
             {
                 "id": t.id,
+                "action_url": url_for("task_actions.task_action", task_id=t.id),
                 "title": t.title,
                 "description": t.description or "暂无描述",
                 "priority": t.priority.value,

@@ -56,6 +56,7 @@
                             class="today-task-action"
                             data-today-detail
                             data-task-id="{{ task.id }}"
+                            data-action-url="{{ url_for('task_actions.task_action', task_id=task.id) }}"
                             data-title="{{ task.title }}"
                             data-priority="{{ task.priority }}"
                             data-priority-value="{{ task.priority_value }}"

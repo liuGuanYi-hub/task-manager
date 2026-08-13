@@ -79,6 +79,17 @@
                 <div class="today-detail-activity"><span class="today-detail-activity-dot"></span><div><strong>任务已加载到当前工作台</strong><small id="today-detail-updated">暂无更新时间</small></div></div>
             </section>
         </div>
-        <footer class="today-detail-footer"><button type="submit" form="today-detail-form" class="btn btn-primary">保存更改</button><a id="today-detail-edit-link" class="btn btn-warning" href="#">完整编辑页</a><span>保存后返回当前工作台</span></footer>
+        <footer class="today-detail-footer">
+            <div class="today-detail-actions" aria-label="任务快速操作">
+                <button type="button" class="btn btn-success" data-task-action="complete">完成</button>
+                <button type="button" class="btn" data-task-action="delay">明天</button>
+                <button type="button" class="btn btn-danger" data-task-action="archive">归档</button>
+            </div>
+            <div class="today-detail-footer-links">
+                <button type="submit" form="today-detail-form" class="btn btn-primary">保存更改</button>
+                <a id="today-detail-edit-link" class="btn btn-warning" href="#">完整编辑页</a>
+            </div>
+            <span id="today-detail-action-feedback" role="status" aria-live="polite">保存后返回当前工作台</span>
+        </footer>
     </aside>
 </div>

@@ -33,6 +33,7 @@ def _due_text(due_date: datetime, now: datetime) -> str:
 def _task_view(task: Task, project_names: dict[int, str], now: datetime, section_title: str) -> dict:
     return {
         "id": task.id,
+        "action_url": url_for("task_actions.task_action", task_id=task.id),
         "title": task.title,
         "description": task.description or "暂无描述",
         "priority": f"{task.priority.value}优先级",
