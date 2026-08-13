@@ -15,6 +15,7 @@ from routes.api_routes import api_bp
 from routes.today_routes import today_bp
 from routes.reminder_routes import reminders_bp
 from routes.search_routes import search_bp
+from routes.inbox_routes import inbox_bp
 
 app = Flask(__name__)
 storage = JSONStorage()
@@ -33,6 +34,7 @@ app.register_blueprint(api_bp)
 app.register_blueprint(today_bp)
 app.register_blueprint(reminders_bp)
 app.register_blueprint(search_bp)
+app.register_blueprint(inbox_bp)
 
 
 def _is_api_request() -> bool:

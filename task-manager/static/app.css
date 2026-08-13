@@ -4652,3 +4652,476 @@ html[data-theme="system"] .board-card-done {
         background: rgba(79, 124, 255, 0.10);
     }
 }
+
+/* 阶段 11.4：Inbox 与任务分流 */
+.inbox-page {
+    display: grid;
+    gap: 20px;
+}
+
+.inbox-intro {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    padding: 24px;
+    background:
+        radial-gradient(circle at 92% 12%, rgba(139, 92, 246, 0.16), transparent 35%),
+        var(--surface);
+}
+
+.inbox-intro h2,
+.inbox-section-heading h2,
+.inbox-empty-state h3 {
+    margin: 6px 0 7px;
+    color: var(--ink);
+}
+
+.inbox-intro p,
+.inbox-section-heading p,
+.inbox-empty-state p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.65;
+}
+
+.inbox-eyebrow {
+    color: var(--violet) !important;
+}
+
+.inbox-rule-list {
+    display: grid;
+    min-width: 250px;
+    gap: 9px;
+    padding: 14px 16px;
+    border: 1px solid rgba(139, 92, 246, 0.18);
+    border-radius: 16px;
+    background: rgba(139, 92, 246, 0.07);
+}
+
+.inbox-rule-list span {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--subtle-ink);
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.inbox-rule-list b {
+    display: grid;
+    width: 22px;
+    height: 22px;
+    place-items: center;
+    border-radius: 8px;
+    color: white;
+    background: linear-gradient(135deg, var(--violet), var(--blue));
+    font-size: 0.68rem;
+}
+
+.inbox-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.inbox-metric-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    padding: 17px;
+    border: 1px solid var(--window-border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--soft-shadow);
+}
+
+.inbox-metric-icon {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    place-items: center;
+    border-radius: 13px;
+    font-weight: 900;
+}
+
+.inbox-metric-card > div {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+}
+
+.inbox-metric-card span:not(.inbox-metric-icon),
+.inbox-metric-card small {
+    color: var(--muted);
+    font-size: 0.72rem;
+}
+
+.inbox-metric-card strong {
+    color: var(--ink);
+    font-size: 1.65rem;
+    line-height: 1.1;
+}
+
+.inbox-metric-blue .inbox-metric-icon { color: var(--blue); background: rgba(79, 124, 255, 0.12); }
+.inbox-metric-violet .inbox-metric-icon { color: var(--violet); background: rgba(139, 92, 246, 0.12); }
+.inbox-metric-mint .inbox-metric-icon { color: var(--green); background: rgba(34, 197, 94, 0.12); }
+
+.inbox-capture,
+.inbox-task-panel {
+    padding: 22px;
+}
+
+.inbox-section-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.inbox-section-heading .text-link,
+.inbox-create-project {
+    flex: 0 0 auto;
+    color: var(--blue);
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.inbox-section-heading .text-link:hover,
+.inbox-create-project:hover {
+    text-decoration: underline;
+}
+
+.inbox-capture-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 118px auto;
+    gap: 10px;
+    align-items: end;
+    margin-top: 16px;
+}
+
+.inbox-capture-form > input,
+.inbox-capture-priority select,
+.inbox-route-form input[type="date"],
+.inbox-route-form select {
+    min-height: 40px;
+    padding: 9px 11px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    color: var(--ink);
+    background: var(--control-surface);
+    outline: none;
+    font-size: 0.8rem;
+}
+
+.inbox-capture-form > input:focus,
+.inbox-capture-priority select:focus,
+.inbox-route-form input[type="date"]:focus,
+.inbox-route-form select:focus {
+    border-color: rgba(79, 124, 255, 0.64);
+    box-shadow: 0 0 0 4px rgba(79, 124, 255, 0.12);
+}
+
+.inbox-capture-priority {
+    display: grid;
+    gap: 5px;
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+.inbox-task-heading {
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.inbox-count-chip {
+    flex: 0 0 auto;
+    padding: 7px 10px;
+    border-radius: 999px;
+    color: var(--blue);
+    background: rgba(79, 124, 255, 0.10);
+    font-size: 0.76rem;
+    font-weight: 900;
+}
+
+.inbox-task-list {
+    display: grid;
+    gap: 12px;
+}
+
+.inbox-task-card {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    gap: 13px;
+    align-items: start;
+    padding: 17px;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--violet);
+    border-radius: 18px;
+    background: var(--surface-strong);
+    box-shadow: 0 10px 24px rgba(46, 63, 101, 0.07);
+}
+
+.inbox-task-done {
+    border-left-color: var(--green);
+}
+
+.inbox-task-marker {
+    display: grid;
+    width: 26px;
+    height: 26px;
+    place-items: center;
+    border: 1px solid rgba(139, 92, 246, 0.28);
+    border-radius: 9px;
+    color: var(--violet);
+    background: rgba(139, 92, 246, 0.09);
+    font-size: 0.9rem;
+    font-weight: 900;
+}
+
+.inbox-task-done .inbox-task-marker {
+    border-color: rgba(34, 197, 94, 0.28);
+    color: var(--green);
+    background: rgba(34, 197, 94, 0.10);
+}
+
+.inbox-task-main {
+    min-width: 0;
+}
+
+.inbox-task-title-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+.inbox-task-title-row h3 {
+    min-width: 0;
+    margin: 0;
+    color: var(--ink);
+    font-size: 0.98rem;
+}
+
+.inbox-priority {
+    font-size: 0.7rem;
+    font-weight: 900;
+}
+
+.inbox-priority-high { color: var(--red); }
+.inbox-priority-medium { color: var(--yellow); }
+.inbox-priority-low { color: var(--green); }
+
+.inbox-task-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.inbox-task-meta .chip {
+    padding: 5px 8px;
+    font-size: 0.7rem;
+}
+
+.inbox-project-chip {
+    color: var(--violet) !important;
+    background: rgba(139, 92, 246, 0.10) !important;
+}
+
+.inbox-task-description {
+    margin: 8px 0 0;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 0.76rem;
+    line-height: 1.5;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.inbox-routing {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 13px;
+}
+
+.inbox-routing-label {
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 900;
+}
+
+.inbox-route-form {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.inbox-route-form input[type="date"],
+.inbox-route-form select {
+    min-height: 32px;
+    padding: 6px 8px;
+    border-radius: 9px;
+    font-size: 0.7rem;
+}
+
+.inbox-route-project-form select {
+    max-width: 150px;
+}
+
+.inbox-route-button {
+    min-height: 32px;
+    padding: 6px 9px;
+    border: 1px solid rgba(79, 124, 255, 0.24);
+    border-radius: 9px;
+    color: var(--blue);
+    background: rgba(79, 124, 255, 0.08);
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: 900;
+}
+
+.inbox-route-button:hover {
+    background: rgba(79, 124, 255, 0.16);
+}
+
+.inbox-task-actions {
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
+}
+
+.inbox-task-actions form {
+    margin: 0;
+}
+
+.inbox-task-actions .btn {
+    min-height: 34px;
+    padding: 8px 11px;
+    border-radius: 11px;
+    font-size: 0.74rem;
+}
+
+.inbox-empty-state {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 22px 8px 8px;
+}
+
+.inbox-empty-icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    place-items: center;
+    border-radius: 14px;
+    color: var(--green);
+    background: rgba(34, 197, 94, 0.12);
+    font-size: 1.2rem;
+}
+
+.inbox-empty-state .btn {
+    margin-left: auto;
+    flex: 0 0 auto;
+}
+
+.inbox-feedback {
+    margin: 0;
+    border-color: rgba(34, 197, 94, 0.22);
+    color: var(--green);
+    background: rgba(34, 197, 94, 0.08);
+}
+
+@media (max-width: 900px) {
+    .inbox-task-card {
+        grid-template-columns: 28px minmax(0, 1fr);
+    }
+
+    .inbox-task-actions {
+        grid-column: 2;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 760px) {
+    .inbox-intro {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 18px;
+    }
+
+    .inbox-rule-list {
+        min-width: 0;
+    }
+
+    .inbox-metric-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .inbox-capture,
+    .inbox-task-panel {
+        padding: 17px;
+    }
+
+    .inbox-capture-form {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .inbox-capture-form > input {
+        grid-column: 1 / -1;
+    }
+
+    .inbox-capture-form > .btn {
+        width: 100%;
+    }
+
+    .inbox-section-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .inbox-task-heading {
+        align-items: flex-start;
+        flex-direction: row;
+    }
+
+    .inbox-task-card {
+        gap: 10px;
+        padding: 14px;
+    }
+
+    .inbox-task-actions {
+        grid-column: 1 / -1;
+        padding-left: 38px;
+    }
+
+    .inbox-route-form {
+        width: 100%;
+    }
+
+    .inbox-route-form input[type="date"],
+    .inbox-route-form select {
+        flex: 1 1 auto;
+        max-width: none;
+    }
+
+    .inbox-empty-state {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .inbox-empty-state .btn {
+        width: 100%;
+        margin-left: 56px;
+    }
+}

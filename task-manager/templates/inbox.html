@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% set active_page = "inbox" %}
+{% block title %}收集箱 - 任务管理系统{% endblock %}
+{% block eyebrow %}INBOX WORKSPACE{% endblock %}
+{% block page_title %}收集箱{% endblock %}
+{% block page_subtitle %}先把想法放进来，再决定下一步安排{% endblock %}
+{% block workspace_context %}收集箱{% endblock %}
+{% block workspace_hint %}未归档、未安排截止日期的任务{% endblock %}
+{% block hero_action %}<a href="{{ url_for('new_task', next='/inbox/') }}" class="btn btn-primary">快速收集</a>{% endblock %}
+{% block content %}
+<div class="inbox-page" data-inbox-root>
+    <section class="inbox-intro panel">
+        <div>
+            <span class="eyebrow inbox-eyebrow">CAPTURE FIRST, PLAN LATER</span>
+            <h2>把杂念变成下一步</h2>
+            <p>Inbox 不要求任务马上有项目或日期。先记录下来，再从每张卡片选择今天、指定日期或项目。</p>
+        </div>
+        <div class="inbox-rule-list" aria-label="收集箱规则">
+            <span><b>1</b>快速记录</span>
+            <span><b>2</b>选择去向</span>
+            <span><b>3</b>回到工作台执行</span>
+        </div>
+    </section>
+
+    <section class="inbox-metric-grid" aria-label="收集箱摘要">
+        <article class="inbox-metric-card inbox-metric-blue"><span class="inbox-metric-icon">▱</span><div><span>待整理任务</span><strong>{{ inbox_count }}</strong><small>还没有截止日期</small></div></article>
+        <article class="inbox-metric-card inbox-metric-violet"><span class="inbox-metric-icon">◈</span><div><span>未归属项目</span><strong>{{ projectless_count }}</strong><small>可以先放入项目</small></div></article>
+        <article class="inbox-metric-card inbox-metric-mint"><span class="inbox-metric-icon">#</span><div><span>已有标签</span><strong>{{ tagged_count }}</strong><small>仍等待日期安排</small></div></article>
+    </section>
+
+    <section class="inbox-capture panel">
+        <div class="inbox-section-heading">
+            <div><span class="eyebrow">QUICK CAPTURE</span><h2>快速放入收集箱</h2></div>
+            <a href="{{ url_for('new_task', next='/inbox/') }}" class="text-link">完整编辑 →</a>
+        </div>
+        <form method="post" action="{{ url_for('new_task', next='/inbox/') }}" class="inbox-capture-form">
+            <label class="sr-only" for="inbox-capture-title">记录一个新任务</label>
+            <input id="inbox-capture-title" name="title" type="text" placeholder="例如：整理下周的学习计划" autocomplete="off" required>
+            <label class="inbox-capture-priority">优先级
+                <select name="priority">
+                    <option value="中">中</option>
+                    <option value="高">高</option>
+                    <option value="低">低</option>
+                </select>
+            </label>
+            <button type="submit" class="btn btn-primary">收集</button>
+        </form>
+    </section>
+
+    {% if feedback %}<div class="notice inbox-feedback" role="status">{{ feedback }}</div>{% endif %}
+
+    <section class="inbox-task-panel panel">
+        <header class="inbox-section-heading inbox-task-heading">
+            <div><span class="eyebrow">UNPLANNED TASKS</span><h2>待整理任务</h2><p>完成或归档后，任务会从这里消失；归入项目但未排期的任务会继续保留。</p></div>
+            <span class="inbox-count-chip">{{ inbox_count }} 项</span>
+        </header>
+        <div class="inbox-task-list">
+            {% for task in tasks %}
+            <article class="inbox-task-card {{ 'inbox-task-done' if task.status.value == '已完成' else '' }}" data-inbox-task data-task-id="{{ task.id }}">
+                <span class="inbox-task-marker" aria-hidden="true">{{ '✓' if task.status.value == '已完成' else '○' }}</span>
+                <div class="inbox-task-main">
+                    <div class="inbox-task-title-row"><h3>{{ task.title }}</h3><span class="inbox-priority inbox-priority-{{ 'high' if task.priority.value == '高' else 'medium' if task.priority.value == '中' else 'low' }}">{{ task.priority.value }}优先级</span></div>
+                    <div class="inbox-task-meta">
+                        <span class="chip">{{ task.status.value }}</span>
+                        {% if task.project_id is not none %}<span class="chip inbox-project-chip">项目：{{ project_names.get(task.project_id, '未知项目') }}</span>{% else %}<span class="chip">未归属项目</span>{% endif %}
+                        {% for tag in task.tags %}<span class="chip">#{{ tag }}</span>{% endfor %}
+                    </div>
+                    {% if task.description %}<p class="inbox-task-description">{{ task.description }}</p>{% endif %}
+                    <div class="inbox-routing" aria-label="任务分流操作">
+                        <span class="inbox-routing-label">安排到</span>
+                        <form method="post" action="{{ url_for('inbox.schedule_task', task_id=task.id) }}" class="inbox-route-form">
+                            <input type="hidden" name="action" value="today">
+                            <button type="submit" class="inbox-route-button">今天</button>
+                        </form>
+                        <form method="post" action="{{ url_for('inbox.schedule_task', task_id=task.id) }}" class="inbox-route-form inbox-route-date-form">
+                            <input type="hidden" name="action" value="date">
+                            <label class="sr-only" for="inbox-date-{{ task.id }}">为 {{ task.title }} 指定日期</label>
+                            <input id="inbox-date-{{ task.id }}" type="date" name="due_date" required>
+                            <button type="submit" class="inbox-route-button">日期</button>
+                        </form>
+                        {% if projects %}
+                        <form method="post" action="{{ url_for('inbox.schedule_task', task_id=task.id) }}" class="inbox-route-form inbox-route-project-form">
+                            <input type="hidden" name="action" value="project">
+                            <label class="sr-only" for="inbox-project-{{ task.id }}">将 {{ task.title }} 归入项目</label>
+                            <select id="inbox-project-{{ task.id }}" name="project_id" required>
+                                <option value="">选择项目…</option>
+                                {% for project in projects %}<option value="{{ project.id }}">{{ project.name }}</option>{% endfor %}
+                            </select>
+                            <button type="submit" class="inbox-route-button">项目</button>
+                        </form>
+                        {% else %}<a href="{{ url_for('projects.new_project') }}" class="inbox-create-project">先创建项目</a>{% endif %}
+                    </div>
+                </div>
+                <div class="inbox-task-actions">
+                    <form method="post" action="{{ url_for('inbox.toggle_inbox_task', task_id=task.id) }}">
+                        <button type="submit" class="btn btn-{{ 'warning' if task.status.value == '已完成' else 'success' }}">{{ '恢复' if task.status.value == '已完成' else '完成' }}</button>
+                    </form>
+                    <a href="{{ url_for('edit_task', task_id=task.id) }}" class="btn btn-warning">编辑</a>
+                    <form method="post" action="{{ url_for('inbox.archive_inbox_task', task_id=task.id) }}">
+                        <button type="submit" class="btn btn-danger">归档</button>
+                    </form>
+                </div>
+            </article>
+            {% else %}
+            <div class="inbox-empty-state">
+                <span class="inbox-empty-icon" aria-hidden="true">✦</span>
+                <div><h3>收集箱已清空</h3><p>所有未排期任务都已经安排好了。继续保持这个节奏。</p></div>
+                <a href="{{ url_for('new_task', next='/inbox/') }}" class="btn btn-primary">记录新任务</a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

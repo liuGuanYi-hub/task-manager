@@ -39,6 +39,7 @@
                 <div class="nav-group nav-group-primary" aria-label="工作区">
                     <span class="nav-group-label">工作区</span>
                     <a href="/" class="{{ 'active' if active_page == 'tasks' else '' }}" {% if active_page == 'tasks' %}aria-current="page"{% endif %}>任务</a>
+                    <a href="{{ url_for('inbox.inbox_page') }}" class="{{ 'active' if active_page == 'inbox' else '' }}" {% if active_page == 'inbox' %}aria-current="page"{% endif %}>收集箱</a>
                     <a href="{{ url_for('today.today_page') }}" class="{{ 'active' if active_page == 'today' else '' }}" {% if active_page == 'today' %}aria-current="page"{% endif %}>今日</a>
                     <a href="{{ url_for('reminders.reminders_page') }}" class="{{ 'active' if active_page == 'reminders' else '' }}" {% if active_page == 'reminders' %}aria-current="page"{% endif %}>提醒</a>
                 </div>
@@ -95,6 +96,7 @@
         <details class="mobile-bottom-nav-more">
             <summary aria-label="打开更多导航"><span aria-hidden="true">•••</span><span>更多</span></summary>
             <div class="mobile-bottom-nav-menu">
+                <a href="{{ url_for('inbox.inbox_page') }}">收集箱</a>
                 <a href="{{ url_for('views.views_page') }}">保存视图</a>
                 <a href="{{ url_for('reminders.reminders_page') }}">提醒</a>
                 <a href="{{ url_for('projects.projects_list') }}">项目</a>
