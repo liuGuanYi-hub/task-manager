@@ -4,7 +4,7 @@
 
 ## 特性
 
-当前版本重点能力：Today 工作台、统一任务详情抽屉、WeKan 式看板状态持久化、保存视图、提醒中心、归档恢复、JSON/SQLite 双存储、REST API v1 认证分页、深色主题、移动端导航、可访问性基础和 GitHub Actions 质量门禁。
+当前版本重点能力：Today 工作台、统一任务详情抽屉、Inbox 收集箱与任务分流、Agenda 七天日程时间线（筛选 + 拖拽 / 触控 / 键盘改期）、统一任务快速操作与撤销回滚、统一视图 Shell、WeKan 式看板状态持久化、保存视图、提醒中心、归档恢复、JSON/SQLite 双存储、REST API v1 认证分页、深色主题、移动端导航、可访问性基础和 GitHub Actions 质量门禁。
 
 ✅ 任务 CRUD 操作  
 ✅ 任务搜索和过滤  
@@ -18,7 +18,11 @@
 ✅ 归档、恢复和安全备份导入
 ✅ JSON/SQLite 存储后端可切换
 ✅ REST API（/api/v1）
-✅ 完整的单元测试  
+✅ Inbox 收集箱（先收集再规划，三种分流方式）
+✅ Agenda 七天日程时间线（三层筛选 + 鼠标 / 触控 / 键盘改期）
+✅ 统一任务操作与撤销回滚（乐观锁防冲突）
+✅ 统一视图 Shell（分组导航 + 全局搜索 + 移动端底部导航）
+✅ 完整的单元测试（45 个测试文件）  
 
 ## 快速开始
 
@@ -70,6 +74,30 @@ python main.py list-tasks --no-project
 
 #### 看板
 浏览器访问 `http://localhost:5000/board`，即可按“待办 / 进行中 / 已完成”查看任务。看板支持按项目筛选，并可在任务卡片内直接选择新状态后提交；状态变化会同步保存到 JSON，任务列表和项目详情会读取同一结果。
+
+#### Inbox 收集箱
+浏览器访问 `http://localhost:5000/inbox`。Inbox 遵循“先收集，再规划”的思路，只显示未归档且没有截止日期的任务。每条任务提供三种分流方式：
+
+- **安排到今天**：把 `due_date` 设为今天的 00:00
+- **安排到指定日期**：输入日期后设置 `due_date`
+- **归入项目**：设置 `project_id`，不设日期（任务仍留在 Inbox）
+
+分流后任务自动移出 Inbox，进入对应的工作台 / 项目视图。Inbox 内还支持直接快速完成 / 恢复（toggle）和快速归档。
+
+#### Agenda 日程时间线
+浏览器访问 `http://localhost:5000/agenda`。Agenda 把截止日期变成一条可执行的七天时间线，并提供三层筛选：
+
+- **日期筛选**：七天时间线 / 选中日期 / 逾期任务 / 未安排任务
+- **密度筛选**：全部 / 有任务的日子 / 高密度（3 项以上）/ 空白日
+- **时间段筛选**：深夜 00:00–06:00 / 上午 06:00–12:00 / 下午 12:00–18:00 / 晚上 18:00–24:00
+
+改期支持三种交互方式，均通过 `/calendar/task/<id>/reschedule` 持久化（保留原截止时间，只改日期）：
+
+- **鼠标拖拽**：拖拽任务卡片到目标日期的 dropzone
+- **触控拖拽**：长按 420ms 激活拖拽模式，松手落位
+- **键盘改期**：聚焦任务后按 `R` 进入改期模式，左右箭头移动日期，`Enter` 保存、`Esc` 取消
+
+改期采用乐观更新：先移动 DOM，保存成功后刷新；失败自动回滚。右侧“未安排任务”侧栏提供“今天 / 明天 / 下周一”快捷安排按钮。
 
 #### 保存视图
 浏览器访问 `http://localhost:5000/views`，可以组合项目、状态、优先级、标签、截止日期和排序条件。页面内置“高优先级未完成”和“本周到期”预设，也可以给当前筛选命名保存，之后从“保存视图”导航中读取或删除。
@@ -157,6 +185,20 @@ python web_app.py
 
 归档任务：`http://localhost:5000/archive`；保存视图：`http://localhost:5000/views`；备份和导入：`http://localhost:5000/settings`。
 
+#### 统一任务操作与撤销
+
+所有页面共享同一个任务详情抽屉（`_task_detail_drawer.html`），其中的快速操作统一走 `POST /task/<id>/action` 端点：
+
+| 动作 | 说明 |
+|---|---|
+| `complete` | 标记为已完成 |
+| `reopen` / `toggle` | 恢复为待办 |
+| `archive` | 归档任务 |
+| `delay` | 延后到明天（默认 09:00）或指定日期 |
+| `undo` | 撤销上一步操作 |
+
+撤销采用快照机制：每次操作前保存任务完整快照，撤销时校验当前状态与预期一致（不一致返回 `409 undo_conflict`，防止并发覆盖），成功则恢复全部业务字段；存储更新失败时内存状态同步回滚。前端操作成功后显示 5 秒倒计时撤销面板，点击“撤销”即回滚。
+
 ### 4. SQLite 与 REST API
 
 默认仍使用 `tasks.json`。需要切换 SQLite 时，通过环境变量选择后端：
@@ -243,8 +285,8 @@ python task-manager/scripts/release_smoke.py
 
 ```
 task-manager/
-├── main.py              # 主程序入口
-├── web_app.py           # Web 应用
+├── main.py              # 主程序入口（CLI）
+├── web_app.py           # Web 应用（注册 16 个 Blueprint）
 ├── models/              # 数据模型
 │   ├── task.py
 │   ├── project.py
@@ -264,24 +306,39 @@ task-manager/
 │   ├── stats.py
 │   ├── remind.py
 │   └── storage.py
-├── routes/              # Flask 页面和 API 路由
-│   └── api_routes.py
+├── routes/              # Flask 页面和 API 路由（16 个 Blueprint）
+│   ├── today_routes.py      # Today 工作台
+│   ├── inbox_routes.py      # Inbox 收集箱与任务分流
+│   ├── agenda_routes.py     # Agenda 七天日程时间线
+│   ├── board_routes.py      # WeKan 看板
+│   ├── calendar_routes.py   # 日历 + 拖拽改期
+│   ├── views_routes.py      # 保存视图
+│   ├── projects_routes.py   # 项目
+│   ├── search_routes.py     # 全局搜索
+│   ├── reminder_routes.py   # 提醒中心
+│   ├── archive_routes.py    # 归档恢复
+│   ├── stats_routes.py      # 统计面板
+│   ├── tags_routes.py       # 标签管理
+│   ├── weekly_routes.py     # 周报
+│   ├── settings_routes.py   # 设置
+│   ├── task_actions.py      # 统一任务操作 + 撤销
+│   └── api_routes.py        # REST API v1
+├── templates/           # Jinja2 模板（22 个，含统一视图 Shell base.html）
+├── static/              # 前端资源（agenda.js / today.js / app.css 等）
 ├── utils/               # 工具函数和安全脱敏
 │   ├── helpers.py
 │   └── security.py
 ├── scripts/             # 发布前维护脚本
-│   └── security_scan.py
+│   ├── security_scan.py
+│   └── release_smoke.py
 ├── docs/                # 接口契约
-│   └── API.md
-├── tests/               # 测试文件
+│   ├── API.md
+│   └── SCHEMA_MIGRATION_PLAN.md
+├── tests/               # 测试文件（45 个，0.1 ~ 16.6 各阶段）
 │   ├── test_task.py
 │   ├── test_storage.py
-│   ├── test_phase_0_1.py
-│   ├── test_phase_2.py
-│   ├── test_phase_3.py
-│   ├── test_phase_4.py
-│   ├── test_phase_5.py
-│   └── test_phase_6.py
+│   ├── test_phase_0_1.py ~ test_phase_16_6.py
+│   └── ...
 ├── requirements.txt     # 依赖包
 └── README.md           # 说明文档
 ```
